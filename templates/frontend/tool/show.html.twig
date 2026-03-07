@@ -1,0 +1,152 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ meta_title ?? tool.name }}{% endblock %}
+{% block og_title %}{{ meta_title ?? tool.name }}{% endblock %}
+{% block og_description %}{{ meta_description ?? tool.description }}{% endblock %}
+{% block og_type %}website{% endblock %}
+
+{% block schema_markup %}
+    {{ schema_tool(tool, site, app.request.schemeAndHttpHost) }}
+    {{ schema_breadcrumb(breadcrumbs, app.request.schemeAndHttpHost) }}
+{% endblock %}
+
+{% block body %}
+    {# ── Breadcrumb ────────────────────────────────────── #}
+    <div class="container" style="padding-top:1rem">
+        {{ include('components/breadcrumb.html.twig', {items: breadcrumbs}) }}
+    </div>
+
+    <div class="container" style="padding-bottom:3rem">
+
+        {# ── Tool Header ──────────────────────────────── #}
+        <div class="tool-header">
+            <div class="tool-type-badge">{{ tool.type.value|capitalize }}</div>
+            <h1>{{ tool.name }}</h1>
+            {% if tool.description %}
+                <p class="tool-description">{{ tool.description }}</p>
+            {% endif %}
+        </div>
+
+        <div class="layout">
+            {# ── Tool Card ────────────────────────────── #}
+            <div>
+                <div class="tool-card">
+                    {# ── Calculator form (rendered server-side from config) ── #}
+                    {% set config = tool.config %}
+                    {% set tool_type = config.tool_type ?? tool.type.value %}
+
+                    <form class="tool-form" id="tool-form" novalidate>
+
+                        {# Input Fields #}
+                        {% if config.fields is defined %}
+                        <div class="tool-fields">
+                            {% for field in config.fields %}
+                            <div class="form-group">
+                                <label for="tf-{{ field.name }}">{{ field.label }}</label>
+                                <div class="input-wrapper">
+                                    {% if field.prefix is defined %}
+                                        <span class="input-addon input-addon--prefix">{{ field.prefix }}</span>
+                                    {% endif %}
+
+                                    {% if field.type == 'select' %}
+                                        <select id="tf-{{ field.name }}"
+                                                name="{{ field.name }}"
+                                                data-field="{{ field.name }}"
+                                                class="form-control{% if field.prefix is defined %} has-prefix{% endif %}{% if field.suffix is defined %} has-suffix{% endif %}">
+                                            {% for opt in field.options %}
+                                                <option value="{{ opt.value }}"
+                                                    {% if opt.value == (field.default ?? '') %}selected{% endif %}>
+                                                    {{ opt.label }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    {% else %}
+                                        <input type="{{ field.type }}"
+                                               id="tf-{{ field.name }}"
+                                               name="{{ field.name }}"
+                                               data-field="{{ field.name }}"
+                                               class="form-control{% if field.prefix is defined %} has-prefix{% endif %}{% if field.suffix is defined %} has-suffix{% endif %}"
+                                               value="{{ field.default ?? '' }}"
+                                               placeholder="{{ field.placeholder ?? '' }}"
+                                               {% if field.min is defined %}min="{{ field.min }}"{% endif %}
+                                               {% if field.max is defined %}max="{{ field.max }}"{% endif %}
+                                               {% if field.step is defined %}step="{{ field.step }}"{% endif %}>
+                                    {% endif %}
+
+                                    {% if field.suffix is defined %}
+                                        <span class="input-addon input-addon--suffix">{{ field.suffix }}</span>
+                                    {% endif %}
+                                </div>
+                                {% if field.help is defined %}
+                                    <p class="form-help">{{ field.help }}</p>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <button type="button" class="btn btn-calculate" id="btn-calculate">
+                            Calculate
+                        </button>
+
+                        {# Results Panel #}
+                        {% if config.outputs is defined %}
+                        <div class="tool-results" id="tool-results" hidden>
+                            <h3 class="results-title">Results</h3>
+                            <div class="results-grid">
+                                {% for output in config.outputs %}
+                                <div class="result-item{% if output.highlight is defined and output.highlight %} result-item--highlight{% endif %}"
+                                     data-output="{{ output.name }}">
+                                    <span class="result-label">{{ output.label }}</span>
+                                    <span class="result-value" id="result-{{ output.name }}">—</span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                    </form>
+
+                    {# Pass config to JavaScript #}
+                    <script type="application/json" id="tool-config">
+                        {{ tool.config|json_encode(constant('JSON_UNESCAPED_UNICODE'))|raw }}
+                    </script>
+                </div>{# .tool-card #}
+
+                {# ── How to use ───────────────────────── #}
+                {% if config.how_to_use is defined %}
+                <div class="tool-info" style="margin-top:2rem">
+                    <h2>How to Use This Calculator</h2>
+                    <p>{{ config.how_to_use }}</p>
+                </div>
+                {% endif %}
+
+                {# ── Formula explanation ───────────────── #}
+                {% if config.formula_explanation is defined %}
+                <div class="tool-info">
+                    <h2>Formula</h2>
+                    <p>{{ config.formula_explanation }}</p>
+                </div>
+                {% endif %}
+            </div>
+
+            {# ── Sidebar ───────────────────────────────── #}
+            <aside class="sidebar">
+                {{ include('components/sidebar.html.twig', {categories: categories}) }}
+
+                {# Related tools #}
+                <div class="sidebar-widget">
+                    <h3>More Tools</h3>
+                    <ul class="sidebar-links">
+                        <li><a href="/tools/">All Tools →</a></li>
+                    </ul>
+                </div>
+            </aside>
+        </div>
+    </div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script src="/assets/js/tools.js" defer></script>
+{% endblock %}

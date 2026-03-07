@@ -6,6 +6,7 @@ namespace App\Twig\Extension;
 
 use App\Entity\Article;
 use App\Entity\Site;
+use App\Entity\Tool;
 use App\Enum\ArticleSchemaType;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFunction;
@@ -18,6 +19,7 @@ class SchemaExtension extends AbstractExtension
             new TwigFunction('schema_article', $this->schemaArticle(...), ['is_safe' => ['html']]),
             new TwigFunction('schema_website', $this->schemaWebsite(...), ['is_safe' => ['html']]),
             new TwigFunction('schema_breadcrumb', $this->schemaBreadcrumb(...), ['is_safe' => ['html']]),
+            new TwigFunction('schema_tool', $this->schemaTool(...), ['is_safe' => ['html']]),
         ];
     }
 
@@ -98,6 +100,30 @@ class SchemaExtension extends AbstractExtension
         }
 
         return $this->toScript($schema);
+    }
+
+    public function schemaTool(Tool $tool, Site $site, string $baseUrl): string
+    {
+        $url = rtrim($baseUrl, '/') . '/tools/' . $tool->getSlug();
+
+        return $this->toScript([
+            '@context' => 'https://schema.org',
+            '@type' => $tool->getSchemaType() ?? 'SoftwareApplication',
+            'name' => $tool->getName(),
+            'description' => $tool->getDescription() ?? $tool->getMetaDescription() ?? '',
+            'url' => $url,
+            'applicationCategory' => 'UtilityApplication',
+            'operatingSystem' => 'Web',
+            'offers' => [
+                '@type' => 'Offer',
+                'price' => '0',
+                'priceCurrency' => 'USD',
+            ],
+            'author' => [
+                '@type' => 'Organization',
+                'name' => $site->getName(),
+            ],
+        ]);
     }
 
     private function toScript(array $data): string

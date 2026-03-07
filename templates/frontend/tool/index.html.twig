@@ -1,0 +1,43 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ meta_title ?? 'Free Online Tools — ' ~ site.name }}{% endblock %}
+
+{% block schema_markup %}
+    {{ schema_breadcrumb(breadcrumbs, app.request.schemeAndHttpHost) }}
+{% endblock %}
+
+{% block body %}
+    <section class="page-hero">
+        <div class="container">
+            {{ include('components/breadcrumb.html.twig', {items: breadcrumbs}) }}
+            <h1>Free Online Tools</h1>
+            <p>Calculators, converters, and analysis tools — free to use, no registration required.</p>
+        </div>
+    </section>
+
+    <div class="container" style="padding-bottom:3rem">
+        {% if tools is not empty %}
+            <div class="tools-grid">
+                {% for tool in tools %}
+                <a href="/tools/{{ tool.slug }}" class="tool-card-link">
+                    <div class="tool-card-mini">
+                        <div class="tool-type-badge tool-type-badge--{{ tool.type.value }}">
+                            {{ tool.type.value|capitalize }}
+                        </div>
+                        <h2>{{ tool.name }}</h2>
+                        {% if tool.description %}
+                            <p>{{ tool.description|slice(0, 120) }}{% if tool.description|length > 120 %}…{% endif %}</p>
+                        {% endif %}
+                        <span class="tool-cta">Use Tool →</span>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <h3>No tools available yet</h3>
+                <p>Check back soon.</p>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}

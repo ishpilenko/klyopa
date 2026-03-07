@@ -7,6 +7,7 @@ namespace App\Service;
 use App\Entity\Article;
 use App\Entity\Category;
 use App\Entity\Site;
+use App\Entity\Tool;
 
 class SeoManager
 {
@@ -37,6 +38,16 @@ class SeoManager
         return [
             'meta_title' => $site->getDefaultMetaTitle() ?: $site->getName(),
             'meta_description' => $site->getDefaultMetaDescription(),
+        ];
+    }
+
+    /** @return array{meta_title: string, meta_description: string|null} */
+    public function forTool(Tool $tool, Site $site): array
+    {
+        return [
+            'meta_title' => $tool->getMetaTitle()
+                ?: $tool->getName() . ' — ' . $site->getName(),
+            'meta_description' => $tool->getMetaDescription() ?: $tool->getDescription(),
         ];
     }
 
