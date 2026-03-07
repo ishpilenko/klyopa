@@ -46,6 +46,9 @@
     {# ── Preconnect ────────────────────────────────────────── #}
     {% block preconnect %}{% endblock %}
 
+    {# ── Dark mode: inline script to prevent FOUC (must be before CSS) ── #}
+    <script>(function(){var m=document.cookie.match(/theme=(light|dark)/);var t=m?m[1]:(window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');document.documentElement.setAttribute('data-theme',t);})();</script>
+
     {# ── Critical CSS (inline for above-the-fold) ──────────── #}
     {% block critical_css %}{% endblock %}
 
@@ -69,10 +72,9 @@
 
     {# ── Header ────────────────────────────────────────────── #}
     {% block header %}
-        <header class="site-header" role="banner">
+        <header class="site-header" role="banner" id="site-header">
             <div class="container">
                 <a href="/" class="site-logo">{{ site.name }}</a>
-                <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">&#9776;</button>
                 <nav class="site-nav" role="navigation" aria-label="Main navigation">
                     {% for cat in categories ?? [] %}
                         <a href="/{{ cat.slug }}/"
@@ -81,6 +83,10 @@
                         </a>
                     {% endfor %}
                 </nav>
+                <div class="header-actions">
+                    <button class="theme-toggle" id="theme-toggle" aria-label="Switch theme">🌙</button>
+                    <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">&#9776;</button>
+                </div>
             </div>
         </header>
     {% endblock %}
@@ -118,6 +124,9 @@
     {# ── Scripts ───────────────────────────────────────────── #}
     {% block javascripts %}
         <script src="/assets/js/app.js" defer></script>
+        <script src="/assets/js/theme.js" defer></script>
+        <script src="/assets/js/toc.js" defer></script>
+        <script src="/assets/js/read-next.js" defer></script>
     {% endblock %}
 </body>
 </html>

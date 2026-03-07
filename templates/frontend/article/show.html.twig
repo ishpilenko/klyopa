@@ -67,9 +67,20 @@
                     </div>
                 {% endif %}
 
-                {# Content #}
-                <div class="article-content" itemprop="articleBody">
-                    {{ article.content|raw }}
+                {# Content with sticky ToC sidebar #}
+                <div class="article-with-toc">
+                    {# ToC sidebar (populated by toc.js) #}
+                    <aside id="article-toc-sidebar" class="article-toc-sidebar" aria-label="Table of contents">
+                        <nav class="toc">
+                            <h2 class="toc-title">Contents</h2>
+                            <ol id="toc-list" class="toc-list"></ol>
+                        </nav>
+                    </aside>
+
+                    {# Article body #}
+                    <div id="article-body" class="article-content" itemprop="articleBody">
+                        {{ article.content|raw }}
+                    </div>
                 </div>
 
                 {# Tags #}
@@ -82,6 +93,15 @@
                 {% endif %}
 
             </article>
+
+            {# Read Next bar (shown when user reaches article end) #}
+            {% if related_articles is not empty %}
+                {% set next_art = related_articles|first %}
+                <div id="read-next-bar" class="read-next-bar" hidden>
+                    <span class="read-next-label">Read next</span>
+                    <a href="/{{ next_art.category.slug }}/{{ next_art.slug }}" class="read-next-link">{{ next_art.title }}</a>
+                </div>
+            {% endif %}
 
             {# ── Sidebar ──────────────────────────── #}
             <aside class="sidebar">

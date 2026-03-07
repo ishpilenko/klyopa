@@ -1,5 +1,22 @@
 // MultiSite Platform — App JS (vanilla)
 
+// Header: hide on scroll down, reveal on scroll up
+(function () {
+    'use strict';
+    var header = document.getElementById('site-header');
+    if (!header) return;
+    var lastScrollY = 0;
+    window.addEventListener('scroll', function () {
+        var y = window.scrollY;
+        if (y > lastScrollY && y > 80) {
+            header.classList.add('header-hidden');
+        } else {
+            header.classList.remove('header-hidden');
+        }
+        lastScrollY = y;
+    }, { passive: true });
+})();
+
 document.addEventListener('DOMContentLoaded', () => {
     // Mobile nav toggle
     const toggle = document.querySelector('.nav-toggle');
