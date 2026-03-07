@@ -1,0 +1,118 @@
+{
+  "name": "Topic Discovery (RSS → Queue)",
+  "nodes": [
+    {
+      "id": "a1b2c3d4-0001",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [240, 300],
+      "parameters": {
+        "rule": {
+          "interval": [{"field": "hours", "hoursInterval": 4}]
+        }
+      }
+    },
+    {
+      "id": "a1b2c3d4-0002",
+      "name": "Fetch RSS Feeds",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1,
+      "position": [460, 300],
+      "parameters": {
+        "url": "={{$json.rss_url}}"
+      }
+    },
+    {
+      "id": "a1b2c3d4-0003",
+      "name": "Set Feed URLs",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [340, 300],
+      "parameters": {
+        "mode": "manual",
+        "duplicateItem": true,
+        "assignments": {
+          "assignments": [
+            {"id": "url1", "name": "rss_url", "value": "https://cointelegraph.com/rss", "type": "string"},
+            {"id": "url2", "name": "rss_url", "value": "https://decrypt.co/feed", "type": "string"},
+            {"id": "url3", "name": "rss_url", "value": "https://coindesk.com/arc/outboundfeeds/rss/", "type": "string"}
+          ]
+        }
+      }
+    },
+    {
+      "id": "a1b2c3d4-0004",
+      "name": "Get Existing Articles",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [680, 300],
+      "parameters": {
+        "method": "GET",
+        "url": "={{$env.API_BASE_URL}}/api/v1/articles",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {"name": "Authorization", "value": "Bearer ={{$env.API_TOKEN}}"}
+          ]
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {"name": "limit", "value": "100"},
+            {"name": "status", "value": "published"}
+          ]
+        }
+      }
+    },
+    {
+      "id": "a1b2c3d4-0005",
+      "name": "Filter New Topics",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 300],
+      "parameters": {
+        "jsCode": "const existing = $('Get Existing Articles').item.json.data || [];\nconst existingTitles = existing.map(a => a.title.toLowerCase());\nconst items = $input.all();\nconst newTopics = [];\n\nfor (const item of items) {\n  const title = item.json.title || '';\n  if (!existingTitles.some(t => t.includes(title.toLowerCase().substring(0, 30)))) {\n    newTopics.push({\n      json: {\n        topic: title,\n        keywords: [title.split(' ').slice(0, 3).join(', ')],\n        source_url: item.json.link || '',\n        priority: 0\n      }\n    });\n  }\n}\nreturn newTopics.slice(0, 5);"
+      }
+    },
+    {
+      "id": "a1b2c3d4-0006",
+      "name": "Add to Queue",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1120, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.API_BASE_URL}}/api/v1/queue",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {"name": "Authorization", "value": "Bearer ={{$env.API_TOKEN}}"},
+            {"name": "Content-Type", "value": "application/json"}
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {"name": "topic", "value": "={{$json.topic}}"},
+            {"name": "keywords", "value": "={{$json.keywords}}"},
+            {"name": "priority", "value": "={{$json.priority}}"}
+          ]
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {"main": [[{"node": "Set Feed URLs", "type": "main", "index": 0}]]},
+    "Set Feed URLs": {"main": [[{"node": "Fetch RSS Feeds", "type": "main", "index": 0}]]},
+    "Fetch RSS Feeds": {"main": [[{"node": "Get Existing Articles", "type": "main", "index": 0}]]},
+    "Get Existing Articles": {"main": [[{"node": "Filter New Topics", "type": "main", "index": 0}]]},
+    "Filter New Topics": {"main": [[{"node": "Add to Queue", "type": "main", "index": 0}]]}
+  },
+  "active": false,
+  "settings": {"executionOrder": "v1"},
+  "staticData": null,
+  "tags": [{"name": "content-pipeline"}]
+}

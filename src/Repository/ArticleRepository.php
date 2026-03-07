@@ -23,6 +23,67 @@ class ArticleRepository extends ServiceEntityRepository
         parent::__construct($registry, Article::class);
     }
 
+    /**
+     * Find article by slug without using SiteContext (for API slug uniqueness checks).
+     * Uses raw SQL to bypass the Doctrine SQL filter.
+     */
+    public function findBySlugUnfiltered(string $slug, int $siteId): ?Article
+    {
+        return $this->createQueryBuilder('a')
+            ->where('a.slug = :slug')
+            ->andWhere('a.site = :siteId')
+            ->setParameter('slug', $slug)
+            ->setParameter('siteId', $siteId)
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
+    /**
+     * Flexible list query for API with optional filters.
+     *
+     * @return array{0: Article[], 1: int}
+     */
+    public function findForApi(
+        ?ArticleStatus $status = null,
+        ?Category $category = null,
+        ?bool $isAiGenerated = null,
+        ?int $olderThanDays = null,
+        int $limit = 20,
+        int $offset = 0,
+    ): array {
+        $site = $this->siteContext->getSite();
+
+        $qb = $this->createQueryBuilder('a')
+            ->where('a.site = :site')
+            ->setParameter('site', $site);
+
+        if ($status !== null) {
+            $qb->andWhere('a.status = :status')->setParameter('status', $status);
+        }
+        if ($category !== null) {
+            $qb->andWhere('a.category = :category')->setParameter('category', $category);
+        }
+        if ($isAiGenerated !== null) {
+            $qb->andWhere('a.isAiGenerated = :aiGen')->setParameter('aiGen', $isAiGenerated);
+        }
+        if ($olderThanDays !== null) {
+            $cutoff = new \DateTimeImmutable("-{$olderThanDays} days");
+            $qb->andWhere('a.publishedAt < :cutoff')->setParameter('cutoff', $cutoff);
+        }
+
+        $total = (int) (clone $qb)->select('COUNT(a.id)')->getQuery()->getSingleScalarResult();
+
+        $articles = $qb
+            ->orderBy('a.publishedAt', 'DESC')
+            ->setMaxResults($limit)
+            ->setFirstResult($offset)
+            ->getQuery()
+            ->getResult();
+
+        return [$articles, $total];
+    }
+
     /** @return Article[] */
     public function findPublished(int $limit = 20, int $offset = 0): array
     {

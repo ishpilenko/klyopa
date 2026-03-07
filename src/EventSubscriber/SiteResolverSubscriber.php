@@ -47,9 +47,15 @@ class SiteResolverSubscriber implements EventSubscriberInterface
         $request = $event->getRequest();
         $host = $request->getHost();
 
-        // Skip Symfony profiler and dev routes
         $pathInfo = $request->getPathInfo();
+
+        // Skip Symfony profiler/dev toolbar routes
         if (str_starts_with($pathInfo, '/_')) {
+            return;
+        }
+
+        // API requests: site context is set by ApiTokenAuthenticator via Bearer token
+        if (str_starts_with($pathInfo, '/api/')) {
             return;
         }
 

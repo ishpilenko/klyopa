@@ -1,0 +1,176 @@
+{
+  "name": "Post-Processing (Draft → Links → Meta → Publish)",
+  "nodes": [
+    {
+      "id": "c1d2e3f4-0001",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [240, 300],
+      "parameters": {
+        "rule": {
+          "interval": [{"field": "hours", "hoursInterval": 1}]
+        }
+      }
+    },
+    {
+      "id": "c1d2e3f4-0002",
+      "name": "Get AI Drafts",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [460, 300],
+      "parameters": {
+        "method": "GET",
+        "url": "={{$env.API_BASE_URL}}/api/v1/articles",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {"name": "Authorization", "value": "Bearer ={{$env.API_TOKEN}}"}
+          ]
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {"name": "status", "value": "draft"},
+            {"name": "is_ai_generated", "value": "true"},
+            {"name": "limit", "value": "5"}
+          ]
+        }
+      }
+    },
+    {
+      "id": "c1d2e3f4-0003",
+      "name": "Split Into Items",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [680, 300],
+      "parameters": {"batchSize": 1, "options": {}}
+    },
+    {
+      "id": "c1d2e3f4-0004",
+      "name": "Suggest Internal Links",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [900, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.API_BASE_URL}}/api/v1/tools/suggest-links",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {"name": "Authorization", "value": "Bearer ={{$env.API_TOKEN}}"},
+            {"name": "Content-Type", "value": "application/json"}
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {"name": "content", "value": "={{$json.content}}"},
+            {"name": "exclude_article_id", "value": "={{$json.id}}"},
+            {"name": "max_links", "value": "5"}
+          ]
+        }
+      }
+    },
+    {
+      "id": "c1d2e3f4-0005",
+      "name": "Generate Meta with Claude",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1120, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {"name": "x-api-key", "value": "={{$env.ANTHROPIC_API_KEY}}"},
+            {"name": "anthropic-version", "value": "2023-06-01"},
+            {"name": "Content-Type", "value": "application/json"}
+          ]
+        },
+        "sendBody": true,
+        "bodyContentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            {"name": "model", "value": "claude-haiku-4-5-20251001"},
+            {"name": "max_tokens", "value": "300"},
+            {
+              "name": "system",
+              "value": "Generate SEO meta tags. Return ONLY valid JSON: {\"meta_title\": \"...\", \"meta_description\": \"...\"}. meta_title max 60 chars, meta_description max 155 chars."
+            },
+            {
+              "name": "messages",
+              "value": "=[{\"role\":\"user\",\"content\":\"Article title: \" + $('Split Into Items').item.json.title + \"\\nContent excerpt: \" + $('Split Into Items').item.json.excerpt}]"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "c1d2e3f4-0006",
+      "name": "Parse and Update Article",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1340, 300],
+      "parameters": {
+        "jsCode": "const article = $('Split Into Items').item.json;\nconst claudeResp = $('Generate Meta with Claude').item.json;\nconst metaText = claudeResp.content[0].text.trim();\n\nlet meta = {};\ntry {\n  meta = JSON.parse(metaText);\n} catch (e) {\n  // fallback: use title as meta_title\n  meta = { meta_title: article.title.substring(0, 60) };\n}\n\nreturn [{ json: { article_id: article.id, ...meta } }];"
+      }
+    },
+    {
+      "id": "c1d2e3f4-0007",
+      "name": "Update Article",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1560, 300],
+      "parameters": {
+        "method": "PUT",
+        "url": "={{$env.API_BASE_URL}}/api/v1/articles/={{$json.article_id}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {"name": "Authorization", "value": "Bearer ={{$env.API_TOKEN}}"},
+            {"name": "Content-Type", "value": "application/json"}
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {"name": "meta_title", "value": "={{$json.meta_title}}"},
+            {"name": "meta_description", "value": "={{$json.meta_description}}"}
+          ]
+        }
+      }
+    },
+    {
+      "id": "c1d2e3f4-0008",
+      "name": "Publish Article",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1780, 300],
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{$env.API_BASE_URL}}/api/v1/articles/={{$('Parse and Update Article').item.json.article_id}}/publish",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {"name": "Authorization", "value": "Bearer ={{$env.API_TOKEN}}"}
+          ]
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {"main": [[{"node": "Get AI Drafts", "type": "main", "index": 0}]]},
+    "Get AI Drafts": {"main": [[{"node": "Split Into Items", "type": "main", "index": 0}]]},
+    "Split Into Items": {"main": [[{"node": "Suggest Internal Links", "type": "main", "index": 0}]]},
+    "Suggest Internal Links": {"main": [[{"node": "Generate Meta with Claude", "type": "main", "index": 0}]]},
+    "Generate Meta with Claude": {"main": [[{"node": "Parse and Update Article", "type": "main", "index": 0}]]},
+    "Parse and Update Article": {"main": [[{"node": "Update Article", "type": "main", "index": 0}]]},
+    "Update Article": {"main": [[{"node": "Publish Article", "type": "main", "index": 0}]]}
+  },
+  "active": false,
+  "settings": {"executionOrder": "v1"},
+  "staticData": null,
+  "tags": [{"name": "content-pipeline"}]
+}

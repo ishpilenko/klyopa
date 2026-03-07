@@ -47,4 +47,17 @@ class ContentQueueRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    /** Generic filter by status (used by API; site filtered via Doctrine SiteFilter) */
+    public function findByStatus(ContentQueueStatus $status, int $limit = 10): array
+    {
+        return $this->createQueryBuilder('q')
+            ->where('q.status = :status')
+            ->setParameter('status', $status)
+            ->orderBy('q.priority', 'DESC')
+            ->addOrderBy('q.createdAt', 'ASC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
 }

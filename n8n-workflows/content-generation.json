@@ -1,0 +1,187 @@
+{
+  "name": "Content Generation (Queue → Claude → Draft)",
+  "nodes": [
+    {
+      "id": "b1c2d3e4-0001",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [240, 300],
+      "parameters": {
+        "rule": {
+          "interval": [{"field": "minutes", "minutesInterval": 30}]
+        }
+      }
+    },
+    {
+      "id": "b1c2d3e4-0002",
+      "name": "Get Pending Queue",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [460, 300],
+      "parameters": {
+        "method": "GET",
+        "url": "={{$env.API_BASE_URL}}/api/v1/queue",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {"name": "Authorization", "value": "Bearer ={{$env.API_TOKEN}}"}
+          ]
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {"name": "status", "value": "pending"},
+            {"name": "limit", "value": "3"}
+          ]
+        }
+      }
+    },
+    {
+      "id": "b1c2d3e4-0003",
+      "name": "Split Into Items",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [680, 300],
+      "parameters": {"batchSize": 1, "options": {}}
+    },
+    {
+      "id": "b1c2d3e4-0004",
+      "name": "Mark as Processing",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [900, 300],
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{$env.API_BASE_URL}}/api/v1/queue/={{$json.id}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {"name": "Authorization", "value": "Bearer ={{$env.API_TOKEN}}"},
+            {"name": "Content-Type", "value": "application/json"}
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [{"name": "status", "value": "processing"}]
+        }
+      }
+    },
+    {
+      "id": "b1c2d3e4-0005",
+      "name": "Generate with Claude",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1120, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {"name": "x-api-key", "value": "={{$env.ANTHROPIC_API_KEY}}"},
+            {"name": "anthropic-version", "value": "2023-06-01"},
+            {"name": "Content-Type", "value": "application/json"}
+          ]
+        },
+        "sendBody": true,
+        "bodyContentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            {"name": "model", "value": "claude-opus-4-6"},
+            {"name": "max_tokens", "value": "4000"},
+            {
+              "name": "system",
+              "value": "You are a professional crypto journalist. Write factual, analytical content with H2/H3 subheadings. Target 1500 words. Include a TL;DR section. Return pure HTML (no markdown)."
+            },
+            {
+              "name": "messages",
+              "value": "=[{\"role\":\"user\",\"content\":\"Write an SEO-optimized article about: \" + $json.topic + \"\\nTarget keywords: \" + ($json.keywords || []).join(', ') + \"\\n\\nRequirements:\\n- H1 title (include primary keyword)\\n- TL;DR summary (2-3 sentences)\\n- 4-5 H2 sections\\n- Minimum 1500 words\\n- Conclusion with forward-looking statement\\n- Return as HTML (use <h1>, <h2>, <p>, <ul>, <strong> tags)\"}]"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "b1c2d3e4-0006",
+      "name": "Parse Claude Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1340, 300],
+      "parameters": {
+        "jsCode": "const claudeResponse = $input.item.json;\nconst queueItem = $('Mark as Processing').item.json.data;\nconst content = claudeResponse.content[0].text;\n\n// Extract H1 title from content\nconst h1Match = content.match(/<h1[^>]*>(.*?)<\\/h1>/i);\nconst title = h1Match ? h1Match[1].replace(/<[^>]+>/g, '') : queueItem.topic;\n\n// Generate slug from title\nconst slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').substring(0, 80);\n\n// Extract excerpt (first paragraph)\nconst pMatch = content.match(/<p[^>]*>(.*?)<\\/p>/i);\nconst excerpt = pMatch ? pMatch[1].replace(/<[^>]+>/g, '').substring(0, 300) : '';\n\nreturn [{\n  json: {\n    queue_id: queueItem.id,\n    title,\n    slug,\n    excerpt,\n    content,\n    category_id: queueItem.target_category_id,\n    is_ai_generated: true,\n    schema_type: 'NewsArticle',\n    tags: (queueItem.keywords || []).slice(0, 5)\n  }\n}];"
+      }
+    },
+    {
+      "id": "b1c2d3e4-0007",
+      "name": "Create Draft Article",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1560, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.API_BASE_URL}}/api/v1/articles",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {"name": "Authorization", "value": "Bearer ={{$env.API_TOKEN}}"},
+            {"name": "Content-Type", "value": "application/json"}
+          ]
+        },
+        "sendBody": true,
+        "bodyContentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            {"name": "title", "value": "={{$json.title}}"},
+            {"name": "slug", "value": "={{$json.slug}}"},
+            {"name": "content", "value": "={{$json.content}}"},
+            {"name": "excerpt", "value": "={{$json.excerpt}}"},
+            {"name": "category_id", "value": "={{$json.category_id}}"},
+            {"name": "is_ai_generated", "value": "=true"},
+            {"name": "schema_type", "value": "={{$json.schema_type}}"},
+            {"name": "tags", "value": "={{$json.tags}}"},
+            {"name": "status", "value": "draft"}
+          ]
+        }
+      }
+    },
+    {
+      "id": "b1c2d3e4-0008",
+      "name": "Mark Queue Completed",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1780, 300],
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{$env.API_BASE_URL}}/api/v1/queue/={{$('Parse Claude Response').item.json.queue_id}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {"name": "Authorization", "value": "Bearer ={{$env.API_TOKEN}}"},
+            {"name": "Content-Type", "value": "application/json"}
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {"name": "status", "value": "completed"},
+            {"name": "result_article_id", "value": "={{$json.data.id}}"}
+          ]
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {"main": [[{"node": "Get Pending Queue", "type": "main", "index": 0}]]},
+    "Get Pending Queue": {"main": [[{"node": "Split Into Items", "type": "main", "index": 0}]]},
+    "Split Into Items": {"main": [[{"node": "Mark as Processing", "type": "main", "index": 0}]]},
+    "Mark as Processing": {"main": [[{"node": "Generate with Claude", "type": "main", "index": 0}]]},
+    "Generate with Claude": {"main": [[{"node": "Parse Claude Response", "type": "main", "index": 0}]]},
+    "Parse Claude Response": {"main": [[{"node": "Create Draft Article", "type": "main", "index": 0}]]},
+    "Create Draft Article": {"main": [[{"node": "Mark Queue Completed", "type": "main", "index": 0}]]}
+  },
+  "active": false,
+  "settings": {"executionOrder": "v1"},
+  "staticData": null,
+  "tags": [{"name": "content-pipeline"}]
+}
