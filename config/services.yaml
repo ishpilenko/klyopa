@@ -27,3 +27,7 @@ services:
     App\Service\MediaManager:
         arguments:
             $uploadsDir: '%kernel.project_dir%/public/uploads'
+
+    App\EventSubscriber\PageCacheSubscriber:
+        arguments:
+            $appEnv: '%kernel.environment%'

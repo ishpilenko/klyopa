@@ -6,8 +6,9 @@ namespace App\Controller\Frontend;
 
 use App\Repository\ArticleRepository;
 use App\Repository\CategoryRepository;
+use App\Service\BreadcrumbService;
+use App\Service\SeoManager;
 use App\Service\SiteContext;
-use Knp\Component\Pager\PaginatorInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -22,7 +23,8 @@ class CategoryController extends AbstractController
         private readonly SiteContext $siteContext,
         private readonly ArticleRepository $articleRepository,
         private readonly CategoryRepository $categoryRepository,
-        private readonly PaginatorInterface $paginator,
+        private readonly SeoManager $seoManager,
+        private readonly BreadcrumbService $breadcrumbService,
     ) {
     }
 
@@ -39,8 +41,9 @@ class CategoryController extends AbstractController
         }
 
         $page = max(1, $request->query->getInt('page', 1));
-        $totalArticles = $this->articleRepository->countPublished();
+        $total = $this->articleRepository->countByCategory($category);
         $articles = $this->articleRepository->findByCategory($category, self::PAGE_SIZE, ($page - 1) * self::PAGE_SIZE);
+        $meta = $this->seoManager->forCategory($category, $site);
 
         return $this->render('frontend/category/listing.html.twig', [
             'site' => $site,
@@ -48,9 +51,9 @@ class CategoryController extends AbstractController
             'categories' => $this->categoryRepository->findActive(),
             'articles' => $articles,
             'current_page' => $page,
-            'total_pages' => (int) ceil(count($articles) / self::PAGE_SIZE) ?: 1,
-            'meta_title' => $category->getMetaTitle() ?? $category->getName() . ' — ' . $site->getName(),
-            'meta_description' => $category->getMetaDescription() ?? $category->getDescription(),
+            'total_pages' => max(1, (int) ceil($total / self::PAGE_SIZE)),
+            'breadcrumbs' => $this->breadcrumbService->forCategory($category),
+            ...$meta,
         ]);
     }
 }

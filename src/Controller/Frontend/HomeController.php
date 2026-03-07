@@ -6,6 +6,7 @@ namespace App\Controller\Frontend;
 
 use App\Repository\ArticleRepository;
 use App\Repository\CategoryRepository;
+use App\Service\SeoManager;
 use App\Service\SiteContext;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
@@ -17,6 +18,7 @@ class HomeController extends AbstractController
         private readonly SiteContext $siteContext,
         private readonly ArticleRepository $articleRepository,
         private readonly CategoryRepository $categoryRepository,
+        private readonly SeoManager $seoManager,
     ) {
     }
 
@@ -24,11 +26,13 @@ class HomeController extends AbstractController
     public function index(): Response
     {
         $site = $this->siteContext->getSite();
+        $meta = $this->seoManager->forSite($site);
 
         return $this->render('frontend/home.html.twig', [
             'site' => $site,
             'articles' => $this->articleRepository->findPublished(limit: 10),
             'categories' => $this->categoryRepository->findActive(),
+            ...$meta,
         ]);
     }
 }

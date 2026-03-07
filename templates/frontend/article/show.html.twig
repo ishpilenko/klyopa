@@ -12,44 +12,15 @@
 {% endblock %}
 
 {% block schema_markup %}
-    <script type="application/ld+json">
-    {
-        "@context": "https://schema.org",
-        "@type": {{ article.schemaType.value|json_encode|raw }},
-        "headline": {{ article.title|json_encode|raw }},
-        "description": {{ (article.excerpt ?? '')|striptags|trim|json_encode|raw }},
-        {% if article.featuredImage %}
-        "image": {{ (app.request.schemeAndHttpHost ~ '/uploads/' ~ article.featuredImage.path)|json_encode|raw }},
-        {% endif %}
-        "datePublished": {{ article.publishedAt|date('c')|json_encode|raw }},
-        "dateModified": {{ (article.contentUpdatedAt ?? article.updatedAt)|date('c')|json_encode|raw }},
-        "author": {
-            "@type": "{% if article.authorName %}Person{% else %}Organization{% endif %}",
-            "name": {{ (article.authorName ?? site.name)|json_encode|raw }}
-        },
-        "publisher": {
-            "@type": "Organization",
-            "name": {{ site.name|json_encode|raw }}
-        },
-        "mainEntityOfPage": {
-            "@type": "WebPage",
-            "@id": {{ (app.request.schemeAndHttpHost ~ app.request.pathInfo)|json_encode|raw }}
-        }
-    }
-    </script>
+    {{ schema_article(article, site, app.request.schemeAndHttpHost) }}
+    {{ schema_breadcrumb(breadcrumbs, app.request.schemeAndHttpHost) }}
 {% endblock %}
 
 {% block body %}
 
     {# ── Breadcrumb ─────────────────────────────── #}
     <div class="container" style="padding-top:1rem">
-        {{ include('components/breadcrumb.html.twig', {
-            items: [
-                {label: 'Home', url: '/'},
-                {label: category.name, url: '/' ~ category.slug ~ '/'},
-                {label: article.title, url: null}
-            ]
-        }) }}
+        {{ include('components/breadcrumb.html.twig', {items: breadcrumbs}) }}
     </div>
 
     <div class="container">

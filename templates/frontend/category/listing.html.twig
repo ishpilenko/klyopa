@@ -3,15 +3,7 @@
 {% block title %}{{ meta_title ?? category.name ~ ' — ' ~ site.name }}{% endblock %}
 
 {% block schema_markup %}
-    <script type="application/ld+json">
-    {
-        "@context": "https://schema.org",
-        "@type": "CollectionPage",
-        "name": {{ category.name|json_encode|raw }},
-        "description": {{ (category.description ?? '')|json_encode|raw }},
-        "url": {{ (app.request.schemeAndHttpHost ~ '/' ~ category.slug ~ '/')|json_encode|raw }}
-    }
-    </script>
+    {{ schema_breadcrumb(breadcrumbs, app.request.schemeAndHttpHost) }}
 {% endblock %}
 
 {% block body %}
@@ -19,12 +11,7 @@
     {# ── Page Hero ───────────────────────────────── #}
     <section class="page-hero">
         <div class="container">
-            {{ include('components/breadcrumb.html.twig', {
-                items: [
-                    {label: 'Home', url: '/'},
-                    {label: category.name, url: null}
-                ]
-            }) }}
+            {{ include('components/breadcrumb.html.twig', {items: breadcrumbs}) }}
             <h1>{{ category.name }}</h1>
             {% if category.description %}
                 <p>{{ category.description }}</p>

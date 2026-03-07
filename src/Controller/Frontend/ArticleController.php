@@ -6,6 +6,8 @@ namespace App\Controller\Frontend;
 
 use App\Repository\ArticleRepository;
 use App\Repository\CategoryRepository;
+use App\Service\BreadcrumbService;
+use App\Service\SeoManager;
 use App\Service\SiteContext;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
@@ -18,6 +20,8 @@ class ArticleController extends AbstractController
         private readonly SiteContext $siteContext,
         private readonly ArticleRepository $articleRepository,
         private readonly CategoryRepository $categoryRepository,
+        private readonly SeoManager $seoManager,
+        private readonly BreadcrumbService $breadcrumbService,
     ) {
     }
 
@@ -38,16 +42,17 @@ class ArticleController extends AbstractController
             throw new NotFoundHttpException('Article not found.');
         }
 
-        $relatedArticles = $this->articleRepository->findByCategory($category, 4);
+        $relatedArticles = $this->articleRepository->findRelated($article->getId(), $category, 3);
+        $meta = $this->seoManager->forArticle($article, $site);
 
         return $this->render('frontend/article/show.html.twig', [
             'site' => $site,
             'article' => $article,
             'category' => $category,
             'categories' => $this->categoryRepository->findActive(),
-            'related_articles' => array_filter($relatedArticles, fn($a) => $a->getId() !== $article->getId()),
-            'meta_title' => $article->getMetaTitle() ?? $article->getTitle(),
-            'meta_description' => $article->getMetaDescription() ?? $article->getExcerpt(),
+            'related_articles' => $relatedArticles,
+            'breadcrumbs' => $this->breadcrumbService->forArticle($article),
+            ...$meta,
         ]);
     }
 }

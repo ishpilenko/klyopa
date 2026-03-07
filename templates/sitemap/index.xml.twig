@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    {% for page in 1..total_article_pages %}
+    <sitemap>
+        <loc>{{ base_url }}/sitemap-articles-{{ page }}.xml</loc>
+        <lastmod>{{ last_modified|date('Y-m-d') }}</lastmod>
+    </sitemap>
+    {% endfor %}
+    <sitemap>
+        <loc>{{ base_url }}/sitemap-categories.xml</loc>
+        <lastmod>{{ last_modified|date('Y-m-d') }}</lastmod>
+    </sitemap>
+    <sitemap>
+        <loc>{{ base_url }}/sitemap-tools.xml</loc>
+        <lastmod>{{ last_modified|date('Y-m-d') }}</lastmod>
+    </sitemap>
+</sitemapindex>

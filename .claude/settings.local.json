@@ -6,7 +6,9 @@
       "Bash(make build:*)",
       "Bash(make up:*)",
       "Bash(docker-compose run:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(head:*)",
+      "Bash(docker-compose exec:*)"
     ]
   }
 }
