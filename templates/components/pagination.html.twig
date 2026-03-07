@@ -1,0 +1,35 @@
+{# @var current_page int #}
+{# @var total_pages  int #}
+{# @var base_url     string  e.g. '/bitcoin/' #}
+{% if total_pages > 1 %}
+<nav class="pagination" aria-label="Pagination">
+    {# Prev #}
+    {% if current_page > 1 %}
+        <a href="{{ base_url }}{% if current_page > 2 %}?page={{ current_page - 1 }}{% endif %}"
+           aria-label="Previous page">&laquo;</a>
+    {% else %}
+        <span class="disabled" aria-disabled="true">&laquo;</span>
+    {% endif %}
+
+    {# Page numbers #}
+    {% set window = 2 %}
+    {% for p in 1..total_pages %}
+        {% if p == 1 or p == total_pages or (p >= current_page - window and p <= current_page + window) %}
+            {% if p == current_page %}
+                <span class="current" aria-current="page">{{ p }}</span>
+            {% else %}
+                <a href="{{ base_url }}{% if p > 1 %}?page={{ p }}{% endif %}">{{ p }}</a>
+            {% endif %}
+        {% elseif p == current_page - window - 1 or p == current_page + window + 1 %}
+            <span class="disabled">&hellip;</span>
+        {% endif %}
+    {% endfor %}
+
+    {# Next #}
+    {% if current_page < total_pages %}
+        <a href="{{ base_url }}?page={{ current_page + 1 }}" aria-label="Next page">&raquo;</a>
+    {% else %}
+        <span class="disabled" aria-disabled="true">&raquo;</span>
+    {% endif %}
+</nav>
+{% endif %}

@@ -1,78 +1,128 @@
 <!DOCTYPE html>
-<html lang="{{ app.request.locale ?? 'en' }}">
+<html lang="{{ site.locale ?? 'en' }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    {# Title #}
+    {# ── Title ─────────────────────────────────────────────── #}
     <title>{% block title %}{{ site.defaultMetaTitle ?? site.name }}{% endblock %}</title>
 
-    {# Meta description #}
+    {# ── Meta description ──────────────────────────────────── #}
     {% block meta_description %}
-        {% if meta_description is defined and meta_description %}
-            <meta name="description" content="{{ meta_description }}">
-        {% elseif site.defaultMetaDescription %}
-            <meta name="description" content="{{ site.defaultMetaDescription }}">
-        {% endif %}
+        {% set desc = meta_description ?? site.defaultMetaDescription %}
+        {% if desc %}<meta name="description" content="{{ desc|striptags|trim|slice(0, 155) }}">{% endif %}
     {% endblock %}
 
-    {# Canonical #}
+    {# ── Canonical ─────────────────────────────────────────── #}
     {% block canonical %}
-        <link rel="canonical" href="{{ app.request.schemeAndHttpHost ~ app.request.requestUri }}">
+        <link rel="canonical" href="{{ app.request.schemeAndHttpHost ~ app.request.pathInfo }}">
     {% endblock %}
 
-    {# Open Graph #}
+    {# ── Robots ────────────────────────────────────────────── #}
+    {% block robots %}<meta name="robots" content="index, follow">{% endblock %}
+
+    {# ── Open Graph ────────────────────────────────────────── #}
     {% block open_graph %}
         <meta property="og:site_name" content="{{ site.name }}">
-        <meta property="og:locale" content="{{ site.locale }}">
-        <meta property="og:title" content="{% block og_title %}{{ block('title') }}{% endblock %}">
-        <meta property="og:description" content="{% block og_description %}{{ meta_description ?? site.defaultMetaDescription ?? '' }}{% endblock %}">
-        <meta property="og:type" content="{% block og_type %}website{% endblock %}">
-        <meta property="og:url" content="{{ app.request.schemeAndHttpHost ~ app.request.requestUri }}">
+        <meta property="og:locale"    content="{{ site.locale }}">
+        <meta property="og:type"      content="{% block og_type %}website{% endblock %}">
+        <meta property="og:url"       content="{{ app.request.schemeAndHttpHost ~ app.request.pathInfo }}">
+        <meta property="og:title"     content="{% block og_title %}{{ block('title') }}{% endblock %}">
+        <meta property="og:description" content="{% block og_description %}{{ (meta_description ?? site.defaultMetaDescription)|striptags|trim|slice(0, 200) }}{% endblock %}">
         {% block og_image %}{% endblock %}
     {% endblock %}
 
-    {# Twitter Card #}
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="{{ block('title') }}">
-    <meta name="twitter:description" content="{{ meta_description ?? site.defaultMetaDescription ?? '' }}">
+    {# ── Twitter Card ──────────────────────────────────────── #}
+    <meta name="twitter:card"        content="summary_large_image">
+    <meta name="twitter:title"       content="{{ block('og_title') }}">
+    <meta name="twitter:description" content="{{ block('og_description') }}">
     {% block twitter_image %}{% endblock %}
 
-    {# Schema.org JSON-LD #}
-    {% block schema_markup %}{% endblock %}
+    {# ── JSON-LD Schema ────────────────────────────────────── #}
+    {% block schema_markup %}
+        <script type="application/ld+json">
+        {
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            "name": {{ site.name|json_encode|raw }},
+            "url": {{ (app.request.schemeAndHttpHost ~ '/')|json_encode|raw }}
+        }
+        </script>
+    {% endblock %}
 
-    {# CSS #}
+    {# ── Preconnect ────────────────────────────────────────── #}
+    {% block preconnect %}{% endblock %}
+
+    {# ── Critical CSS (inline for above-the-fold) ──────────── #}
+    {% block critical_css %}{% endblock %}
+
+    {# ── Stylesheets ───────────────────────────────────────── #}
     {% block stylesheets %}
         <link rel="stylesheet" href="/assets/css/app.css">
     {% endblock %}
+
+    {# ── Analytics ─────────────────────────────────────────── #}
+    {% if site.analyticsId and app.environment != 'dev' %}
+        <script async src="https://www.googletagmanager.com/gtag/js?id={{ site.analyticsId }}"></script>
+        <script>
+            window.dataLayer=window.dataLayer||[];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', {{ site.analyticsId|json_encode|raw }});
+        </script>
+    {% endif %}
 </head>
 <body class="vertical-{{ site.vertical.value }} theme-{{ site.theme }}">
 
+    {# ── Header ────────────────────────────────────────────── #}
     {% block header %}
-        <header class="site-header">
+        <header class="site-header" role="banner">
             <div class="container">
                 <a href="/" class="site-logo">{{ site.name }}</a>
-                <nav class="site-nav">
-                    {% for category in categories ?? [] %}
-                        <a href="/{{ category.slug }}/">{{ category.name }}</a>
+                <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">&#9776;</button>
+                <nav class="site-nav" role="navigation" aria-label="Main navigation">
+                    {% for cat in categories ?? [] %}
+                        <a href="/{{ cat.slug }}/"
+                           {% if app.request.pathInfo starts with '/' ~ cat.slug %}class="active"{% endif %}>
+                            {{ cat.name }}
+                        </a>
                     {% endfor %}
                 </nav>
             </div>
         </header>
     {% endblock %}
 
-    <main class="site-main">
+    {# ── Flash Messages ────────────────────────────────────── #}
+    {% for type, messages in app.flashes(['success', 'error', 'warning']) %}
+        {% for message in messages %}
+            <div class="flash flash--{{ type }}" role="alert">{{ message }}</div>
+        {% endfor %}
+    {% endfor %}
+
+    {# ── Main Content ──────────────────────────────────────── #}
+    <main class="site-main" role="main" id="main-content">
         {% block body %}{% endblock %}
     </main>
 
+    {# ── Footer ────────────────────────────────────────────── #}
     {% block footer %}
-        <footer class="site-footer">
+        <footer class="site-footer" role="contentinfo">
             <div class="container">
-                <p>&copy; {{ 'now'|date('Y') }} {{ site.name }}. All rights reserved.</p>
+                <p>
+                    &copy; {{ 'now'|date('Y') }} {{ site.name }}.
+                    All rights reserved.
+                    {% if categories ?? [] %}
+                        &ensp;|&ensp;
+                        {% for cat in categories %}
+                            <a href="/{{ cat.slug }}/" style="color:inherit;opacity:.7">{{ cat.name }}</a>{% if not loop.last %}&ensp;{% endif %}
+                        {% endfor %}
+                    {% endif %}
+                </p>
             </div>
         </footer>
     {% endblock %}
 
+    {# ── Scripts ───────────────────────────────────────────── #}
     {% block javascripts %}
         <script src="/assets/js/app.js" defer></script>
     {% endblock %}

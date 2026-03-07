@@ -23,3 +23,7 @@ services:
     App\EventSubscriber\SiteResolverSubscriber:
         tags:
             - { name: kernel.event_subscriber }
+
+    App\Service\MediaManager:
+        arguments:
+            $uploadsDir: '%kernel.project_dir%/public/uploads'

@@ -3,23 +3,45 @@
 {% block title %}{{ site.defaultMetaTitle ?? site.name }}{% endblock %}
 
 {% block body %}
-<div class="container">
-    <h1>{{ site.name }}</h1>
-    <p>{{ site.defaultMetaDescription }}</p>
 
-    <section class="latest-articles">
-        <h2>Latest Articles</h2>
-        {% for article in articles %}
-            <article class="article-card">
-                <h3><a href="/{{ article.category ? article.category.slug ~ '/' : '' }}{{ article.slug }}">{{ article.title }}</a></h3>
-                {% if article.excerpt %}
-                    <p>{{ article.excerpt }}</p>
-                {% endif %}
-                <time datetime="{{ article.publishedAt|date('Y-m-d') }}">{{ article.publishedAt|date('F j, Y') }}</time>
-            </article>
-        {% else %}
-            <p>No articles yet.</p>
-        {% endfor %}
+    {# ── Hero ─────────────────────────────────────── #}
+    <section class="home-hero">
+        <div class="container">
+            <h1>{{ site.name }}</h1>
+            {% if site.defaultMetaDescription %}
+                <p>{{ site.defaultMetaDescription }}</p>
+            {% endif %}
+        </div>
     </section>
-</div>
+
+    <div class="container">
+        <div class="layout">
+            {# ── Main column ─────────────────────── #}
+            <div>
+
+                <div class="section-header">
+                    <h2>Latest Articles</h2>
+                </div>
+
+                {% if articles is not empty %}
+                    <div class="article-grid">
+                        {% for article in articles %}
+                            {{ include('components/article_card.html.twig', {article: article}) }}
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <h3>No articles yet</h3>
+                        <p>Check back soon for the latest content.</p>
+                    </div>
+                {% endif %}
+
+            </div>
+
+            {# ── Sidebar ──────────────────────────── #}
+            <aside class="sidebar">
+                {{ include('components/sidebar.html.twig', {categories: categories}) }}
+            </aside>
+        </div>
+    </div>
 {% endblock %}

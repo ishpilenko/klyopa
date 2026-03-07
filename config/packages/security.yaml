@@ -3,8 +3,14 @@ security:
         Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface: 'auto'
 
     providers:
-        users_in_memory:
-            memory: ~
+        admin_users:
+            memory:
+                users:
+                    admin:
+                        # Generate with: bin/console security:hash-password
+                        # Default dev password: admin
+                        password: '%env(ADMIN_PASSWORD_HASH)%'
+                        roles: ['ROLE_ADMIN']
 
     firewalls:
         dev:
@@ -19,8 +25,16 @@ security:
 
         main:
             lazy: true
-            provider: users_in_memory
+            provider: admin_users
+            http_basic:
+                realm: 'MultiSite Admin'
 
     access_control:
         - { path: ^/api/, roles: IS_AUTHENTICATED_FULLY }
-        - { path: ^/admin/, roles: ROLE_ADMIN }
+
+# In dev — no authentication required for admin
+when@dev:
+    security:
+        firewalls:
+            main:
+                security: false

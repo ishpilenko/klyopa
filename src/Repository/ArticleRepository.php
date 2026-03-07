@@ -52,7 +52,7 @@ class ArticleRepository extends ServiceEntityRepository
     }
 
     /** @return Article[] */
-    public function findByCategory(Category $category, int $limit = 20): array
+    public function findByCategory(Category $category, int $limit = 20, int $offset = 0): array
     {
         return $this->createQueryBuilder('a')
             ->where('a.site = :site')
@@ -63,8 +63,23 @@ class ArticleRepository extends ServiceEntityRepository
             ->setParameter('status', ArticleStatus::Published)
             ->orderBy('a.publishedAt', 'DESC')
             ->setMaxResults($limit)
+            ->setFirstResult($offset)
             ->getQuery()
             ->getResult();
+    }
+
+    public function countByCategory(Category $category): int
+    {
+        return (int) $this->createQueryBuilder('a')
+            ->select('COUNT(a.id)')
+            ->where('a.site = :site')
+            ->andWhere('a.category = :category')
+            ->andWhere('a.status = :status')
+            ->setParameter('site', $this->siteContext->getSite())
+            ->setParameter('category', $category)
+            ->setParameter('status', ArticleStatus::Published)
+            ->getQuery()
+            ->getSingleScalarResult();
     }
 
     public function countPublished(): int

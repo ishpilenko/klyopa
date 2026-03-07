@@ -1,0 +1,66 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ meta_title ?? category.name ~ ' — ' ~ site.name }}{% endblock %}
+
+{% block schema_markup %}
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        "name": {{ category.name|json_encode|raw }},
+        "description": {{ (category.description ?? '')|json_encode|raw }},
+        "url": {{ (app.request.schemeAndHttpHost ~ '/' ~ category.slug ~ '/')|json_encode|raw }}
+    }
+    </script>
+{% endblock %}
+
+{% block body %}
+
+    {# ── Page Hero ───────────────────────────────── #}
+    <section class="page-hero">
+        <div class="container">
+            {{ include('components/breadcrumb.html.twig', {
+                items: [
+                    {label: 'Home', url: '/'},
+                    {label: category.name, url: null}
+                ]
+            }) }}
+            <h1>{{ category.name }}</h1>
+            {% if category.description %}
+                <p>{{ category.description }}</p>
+            {% endif %}
+        </div>
+    </section>
+
+    <div class="container">
+        <div class="layout">
+
+            {# ── Articles ────────────────────────── #}
+            <div>
+                {% if articles is not empty %}
+                    <div class="article-grid">
+                        {% for article in articles %}
+                            {{ include('components/article_card.html.twig', {article: article, show_category: false}) }}
+                        {% endfor %}
+                    </div>
+
+                    {{ include('components/pagination.html.twig', {
+                        current_page: current_page,
+                        total_pages: total_pages,
+                        base_url: '/' ~ category.slug ~ '/'
+                    }) }}
+                {% else %}
+                    <div class="empty-state">
+                        <h3>No articles in this category yet</h3>
+                        <p>Check back soon for the latest content.</p>
+                    </div>
+                {% endif %}
+            </div>
+
+            {# ── Sidebar ──────────────────────────── #}
+            <aside class="sidebar">
+                {{ include('components/sidebar.html.twig', {categories: categories, active_category: category}) }}
+            </aside>
+        </div>
+    </div>
+{% endblock %}

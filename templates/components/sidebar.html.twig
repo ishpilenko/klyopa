@@ -1,0 +1,26 @@
+{# @var categories \App\Entity\Category[] #}
+{# @var active_category \App\Entity\Category|null #}
+
+{# Categories widget #}
+{% if categories is not empty %}
+<div class="sidebar-widget">
+    <h3>Categories</h3>
+    <ul class="sidebar-links">
+        {% for cat in categories %}
+            <li>
+                <a href="/{{ cat.slug }}/"
+                   {% if active_category is defined and active_category and active_category.id == cat.id %}
+                       style="color:var(--color-primary);font-weight:600"
+                   {% endif %}>
+                    {{ cat.name }}
+                </a>
+            </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+{# Placeholder ad widget #}
+<div class="sidebar-widget" style="text-align:center;background:var(--color-surface-alt);color:var(--color-text-muted);min-height:250px;display:flex;align-items:center;justify-content:center">
+    <p style="font-size:.8rem;margin:0">Advertisement</p>
+</div>

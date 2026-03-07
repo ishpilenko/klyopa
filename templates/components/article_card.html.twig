@@ -1,0 +1,51 @@
+{# @var article \App\Entity\Article #}
+{# @var show_category bool #}
+{% set show_category = show_category ?? true %}
+{% set cat = article.category %}
+{% set url = cat ? '/' ~ cat.slug ~ '/' ~ article.slug : '/' ~ article.slug %}
+
+<article class="article-card">
+    {# Image #}
+    {% if article.featuredImage %}
+        <div class="article-card__image">
+            <a href="{{ url }}" tabindex="-1" aria-hidden="true">
+                <img src="/uploads/{{ article.featuredImage.path }}"
+                     alt="{{ article.featuredImage.altText ?? article.title }}"
+                     loading="lazy"
+                     width="400" height="200">
+            </a>
+        </div>
+    {% else %}
+        <div class="article-card__image-placeholder"></div>
+    {% endif %}
+
+    <div class="article-card__body">
+        {% if show_category and cat %}
+            <div class="article-card__category">
+                <a href="/{{ cat.slug }}/">{{ cat.name }}</a>
+            </div>
+        {% endif %}
+
+        <h3 class="article-card__title">
+            <a href="{{ url }}">{{ article.title }}</a>
+        </h3>
+
+        {% if article.excerpt %}
+            <p class="article-card__excerpt">{{ article.excerpt|striptags }}</p>
+        {% endif %}
+
+        <div class="article-card__meta">
+            {% if article.publishedAt %}
+                <time datetime="{{ article.publishedAt|date('Y-m-d') }}">
+                    {{ article.publishedAt|date('M j, Y') }}
+                </time>
+            {% endif %}
+            {% if article.readingTimeMinutes > 0 %}
+                <span>{{ article.readingTimeMinutes }} min read</span>
+            {% endif %}
+            {% if article.isAiGenerated %}
+                <span class="badge-ai">AI</span>
+            {% endif %}
+        </div>
+    </div>
+</article>

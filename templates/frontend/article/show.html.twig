@@ -1,0 +1,136 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ meta_title ?? article.title }}{% endblock %}
+
+{% block og_type %}article{% endblock %}
+{% block og_title %}{{ meta_title ?? article.title }}{% endblock %}
+{% block og_description %}{{ article.excerpt|striptags|trim|slice(0, 200) }}{% endblock %}
+{% block og_image %}
+    {% if article.featuredImage %}
+        <meta property="og:image" content="{{ app.request.schemeAndHttpHost }}/uploads/{{ article.featuredImage.path }}">
+    {% endif %}
+{% endblock %}
+
+{% block schema_markup %}
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": {{ article.schemaType.value|json_encode|raw }},
+        "headline": {{ article.title|json_encode|raw }},
+        "description": {{ (article.excerpt ?? '')|striptags|trim|json_encode|raw }},
+        {% if article.featuredImage %}
+        "image": {{ (app.request.schemeAndHttpHost ~ '/uploads/' ~ article.featuredImage.path)|json_encode|raw }},
+        {% endif %}
+        "datePublished": {{ article.publishedAt|date('c')|json_encode|raw }},
+        "dateModified": {{ (article.contentUpdatedAt ?? article.updatedAt)|date('c')|json_encode|raw }},
+        "author": {
+            "@type": "{% if article.authorName %}Person{% else %}Organization{% endif %}",
+            "name": {{ (article.authorName ?? site.name)|json_encode|raw }}
+        },
+        "publisher": {
+            "@type": "Organization",
+            "name": {{ site.name|json_encode|raw }}
+        },
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": {{ (app.request.schemeAndHttpHost ~ app.request.pathInfo)|json_encode|raw }}
+        }
+    }
+    </script>
+{% endblock %}
+
+{% block body %}
+
+    {# ── Breadcrumb ─────────────────────────────── #}
+    <div class="container" style="padding-top:1rem">
+        {{ include('components/breadcrumb.html.twig', {
+            items: [
+                {label: 'Home', url: '/'},
+                {label: category.name, url: '/' ~ category.slug ~ '/'},
+                {label: article.title, url: null}
+            ]
+        }) }}
+    </div>
+
+    <div class="container">
+        <div class="layout">
+
+            {# ── Article ─────────────────────────── #}
+            <article itemscope itemtype="https://schema.org/{{ article.schemaType.value }}">
+
+                {# Header #}
+                <header class="article-header">
+                    <div class="article-meta">
+                        <span class="article-meta__category">
+                            <a href="/{{ category.slug }}/">{{ category.name }}</a>
+                        </span>
+                        {% if article.publishedAt %}
+                            <time datetime="{{ article.publishedAt|date('Y-m-d') }}" class="meta-chip">
+                                {{ article.publishedAt|date('F j, Y') }}
+                            </time>
+                        {% endif %}
+                        {% if article.readingTimeMinutes > 0 %}
+                            <span class="meta-chip">{{ article.readingTimeMinutes }} min read</span>
+                        {% endif %}
+                        {% if article.isAiGenerated %}
+                            <span class="badge-ai">AI</span>
+                        {% endif %}
+                    </div>
+
+                    <h1 itemprop="headline">{{ article.title }}</h1>
+
+                    {% if article.excerpt %}
+                        <p class="text-muted" style="font-size:1.1rem;margin-bottom:1.5rem" itemprop="description">
+                            {{ article.excerpt }}
+                        </p>
+                    {% endif %}
+                </header>
+
+                {# Featured Image #}
+                {% if article.featuredImage %}
+                    <div class="article-featured-image">
+                        <img src="/uploads/{{ article.featuredImage.path }}"
+                             alt="{{ article.featuredImage.altText ?? article.title }}"
+                             loading="eager"
+                             itemprop="image">
+                    </div>
+                {% endif %}
+
+                {# Content #}
+                <div class="article-content" itemprop="articleBody">
+                    {{ article.content|raw }}
+                </div>
+
+                {# Tags #}
+                {% if article.tags is not empty %}
+                    <div class="tags" style="margin-top:2rem">
+                        {% for tag in article.tags %}
+                            <span class="tag">#{{ tag.name }}</span>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+            </article>
+
+            {# ── Sidebar ──────────────────────────── #}
+            <aside class="sidebar">
+                {{ include('components/sidebar.html.twig', {categories: categories}) }}
+            </aside>
+        </div>
+
+        {# ── Related Articles ──────────────────── #}
+        {% if related_articles is not empty %}
+            <section style="margin-top:3rem">
+                <div class="section-header">
+                    <h2>Related Articles</h2>
+                    <a href="/{{ category.slug }}/">More in {{ category.name }} →</a>
+                </div>
+                <div class="related-grid">
+                    {% for related in related_articles|slice(0, 3) %}
+                        {{ include('components/article_card.html.twig', {article: related}) }}
+                    {% endfor %}
+                </div>
+            </section>
+        {% endif %}
+    </div>
+{% endblock %}
