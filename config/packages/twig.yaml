@@ -1,0 +1,9 @@
+twig:
+    file_name_pattern: '*.twig'
+    strict_variables: '%kernel.debug%'
+    globals:
+        app_name: 'MultiSite Platform'
+
+when@test:
+    twig:
+        strict_variables: true

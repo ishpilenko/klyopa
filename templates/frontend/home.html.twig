@@ -1,0 +1,25 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ site.defaultMetaTitle ?? site.name }}{% endblock %}
+
+{% block body %}
+<div class="container">
+    <h1>{{ site.name }}</h1>
+    <p>{{ site.defaultMetaDescription }}</p>
+
+    <section class="latest-articles">
+        <h2>Latest Articles</h2>
+        {% for article in articles %}
+            <article class="article-card">
+                <h3><a href="/{{ article.category ? article.category.slug ~ '/' : '' }}{{ article.slug }}">{{ article.title }}</a></h3>
+                {% if article.excerpt %}
+                    <p>{{ article.excerpt }}</p>
+                {% endif %}
+                <time datetime="{{ article.publishedAt|date('Y-m-d') }}">{{ article.publishedAt|date('F j, Y') }}</time>
+            </article>
+        {% else %}
+            <p>No articles yet.</p>
+        {% endfor %}
+    </section>
+</div>
+{% endblock %}

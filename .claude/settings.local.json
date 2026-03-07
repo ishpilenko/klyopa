@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(chmod +x:*)",
+      "Bash(make init:*)",
+      "Bash(make build:*)",
+      "Bash(make up:*)",
+      "Bash(docker-compose run:*)",
+      "Bash(grep:*)"
+    ]
+  }
+}

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="{{ app.request.locale ?? 'en' }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    {# Title #}
+    <title>{% block title %}{{ site.defaultMetaTitle ?? site.name }}{% endblock %}</title>
+
+    {# Meta description #}
+    {% block meta_description %}
+        {% if meta_description is defined and meta_description %}
+            <meta name="description" content="{{ meta_description }}">
+        {% elseif site.defaultMetaDescription %}
+            <meta name="description" content="{{ site.defaultMetaDescription }}">
+        {% endif %}
+    {% endblock %}
+
+    {# Canonical #}
+    {% block canonical %}
+        <link rel="canonical" href="{{ app.request.schemeAndHttpHost ~ app.request.requestUri }}">
+    {% endblock %}
+
+    {# Open Graph #}
+    {% block open_graph %}
+        <meta property="og:site_name" content="{{ site.name }}">
+        <meta property="og:locale" content="{{ site.locale }}">
+        <meta property="og:title" content="{% block og_title %}{{ block('title') }}{% endblock %}">
+        <meta property="og:description" content="{% block og_description %}{{ meta_description ?? site.defaultMetaDescription ?? '' }}{% endblock %}">
+        <meta property="og:type" content="{% block og_type %}website{% endblock %}">
+        <meta property="og:url" content="{{ app.request.schemeAndHttpHost ~ app.request.requestUri }}">
+        {% block og_image %}{% endblock %}
+    {% endblock %}
+
+    {# Twitter Card #}
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ block('title') }}">
+    <meta name="twitter:description" content="{{ meta_description ?? site.defaultMetaDescription ?? '' }}">
+    {% block twitter_image %}{% endblock %}
+
+    {# Schema.org JSON-LD #}
+    {% block schema_markup %}{% endblock %}
+
+    {# CSS #}
+    {% block stylesheets %}
+        <link rel="stylesheet" href="/assets/css/app.css">
+    {% endblock %}
+</head>
+<body class="vertical-{{ site.vertical.value }} theme-{{ site.theme }}">
+
+    {% block header %}
+        <header class="site-header">
+            <div class="container">
+                <a href="/" class="site-logo">{{ site.name }}</a>
+                <nav class="site-nav">
+                    {% for category in categories ?? [] %}
+                        <a href="/{{ category.slug }}/">{{ category.name }}</a>
+                    {% endfor %}
+                </nav>
+            </div>
+        </header>
+    {% endblock %}
+
+    <main class="site-main">
+        {% block body %}{% endblock %}
+    </main>
+
+    {% block footer %}
+        <footer class="site-footer">
+            <div class="container">
+                <p>&copy; {{ 'now'|date('Y') }} {{ site.name }}. All rights reserved.</p>
+            </div>
+        </footer>
+    {% endblock %}
+
+    {% block javascripts %}
+        <script src="/assets/js/app.js" defer></script>
+    {% endblock %}
+</body>
+</html>

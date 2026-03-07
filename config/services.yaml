@@ -1,0 +1,25 @@
+parameters:
+    app.supported_locales: 'en|ru|uk|de|es|fr|pt'
+
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+        public: false
+
+    App\:
+        resource: '../src/'
+        exclude:
+            - '../src/DependencyInjection/'
+            - '../src/Entity/'
+            - '../src/Enum/'
+            - '../src/Kernel.php'
+
+    # SiteContext is request-scoped — reset between requests in long-running processes
+    App\Service\SiteContext:
+        public: true
+
+    # SiteResolverSubscriber needs high priority
+    App\EventSubscriber\SiteResolverSubscriber:
+        tags:
+            - { name: kernel.event_subscriber }

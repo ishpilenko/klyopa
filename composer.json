@@ -1,0 +1,96 @@
+{
+    "name": "multisite/platform",
+    "description": "MultiSite SEO Platform — информационные/новостные порталы",
+    "type": "project",
+    "license": "proprietary",
+    "require": {
+        "php": ">=8.4",
+        "ext-ctype": "*",
+        "ext-iconv": "*",
+        "ext-redis": "*",
+        "doctrine/doctrine-bundle": "^2.13",
+        "doctrine/doctrine-fixtures-bundle": "^3.6",
+        "doctrine/doctrine-migrations-bundle": "^3.3",
+        "doctrine/orm": "^3.3",
+        "ezyang/htmlpurifier": "^4.17",
+        "symfony/asset": "7.*",
+        "symfony/cache": "7.*",
+        "symfony/console": "7.*",
+        "symfony/doctrine-messenger": "7.*",
+        "symfony/dotenv": "7.*",
+        "symfony/event-dispatcher": "7.*",
+        "symfony/flex": "^2",
+        "symfony/framework-bundle": "7.*",
+        "symfony/http-client": "7.*",
+        "symfony/messenger": "7.*",
+        "symfony/property-access": "7.*",
+        "symfony/rate-limiter": "7.*",
+        "symfony/runtime": "7.*",
+        "symfony/security-bundle": "7.*",
+        "symfony/serializer": "7.*",
+        "symfony/twig-bundle": "7.*",
+        "symfony/validator": "7.*",
+        "symfony/yaml": "7.*",
+        "twig/extra-bundle": "^3",
+        "twig/twig": "^3"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11",
+        "symfony/browser-kit": "7.*",
+        "symfony/css-selector": "7.*",
+        "symfony/debug-bundle": "7.*",
+        "symfony/maker-bundle": "^1",
+        "symfony/phpunit-bridge": "7.*",
+        "symfony/stopwatch": "7.*",
+        "symfony/web-profiler-bundle": "7.*"
+    },
+    "config": {
+        "allow-plugins": {
+            "php-http/discovery": true,
+            "symfony/flex": true,
+            "symfony/runtime": true
+        },
+        "sort-packages": true
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "App\\Tests\\": "tests/"
+        }
+    },
+    "replace": {
+        "symfony/polyfill-ctype": "*",
+        "symfony/polyfill-iconv": "*",
+        "symfony/polyfill-php72": "*",
+        "symfony/polyfill-php73": "*",
+        "symfony/polyfill-php74": "*",
+        "symfony/polyfill-php80": "*",
+        "symfony/polyfill-php81": "*",
+        "symfony/polyfill-php82": "*"
+    },
+    "scripts": {
+        "auto-scripts": {
+            "cache:clear": "symfony-cmd",
+            "assets:install %PUBLIC_DIR%": "symfony-cmd"
+        },
+        "post-install-cmd": [
+            "@auto-scripts"
+        ],
+        "post-update-cmd": [
+            "@auto-scripts"
+        ]
+    },
+    "conflict": {
+        "symfony/symfony": "*"
+    },
+    "extra": {
+        "symfony": {
+            "allow-contrib": false,
+            "require": "7.*"
+        }
+    }
+}
