@@ -209,6 +209,26 @@ class Site
         return $this;
     }
 
+    /** Virtual property for EasyAdmin CodeEditorField (needs string, not array) */
+    public function getSettingsJson(): ?string
+    {
+        return $this->settings !== null
+            ? json_encode($this->settings, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
+            : null;
+    }
+
+    public function setSettingsJson(?string $json): static
+    {
+        if ($json === null || trim($json) === '') {
+            $this->settings = null;
+        } else {
+            $decoded = json_decode($json, true);
+            $this->settings = (JSON_ERROR_NONE === json_last_error()) ? $decoded : $this->settings;
+        }
+
+        return $this;
+    }
+
     public function isActive(): bool
     {
         return $this->isActive;

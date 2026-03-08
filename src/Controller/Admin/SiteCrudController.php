@@ -52,11 +52,10 @@ class SiteCrudController extends AbstractCrudController
         yield TextField::new('analyticsId')->setColumns(6)->hideOnIndex();
         yield TextField::new('searchConsoleId')->setColumns(6)->hideOnIndex();
 
-        yield CodeEditorField::new('settings')
-            ->setLanguage('yaml')
+        yield CodeEditorField::new('settingsJson', 'Settings (JSON)')
+            ->setLanguage('js')
             ->hideOnIndex()
-            ->setColumns(12)
-            ->formatValue(fn($v) => $v ? json_encode($v, JSON_PRETTY_PRINT) : null);
+            ->setColumns(12);
 
         yield BooleanField::new('isActive');
         yield DateTimeField::new('createdAt')->hideOnForm()->onlyOnDetail();
