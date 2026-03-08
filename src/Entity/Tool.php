@@ -139,6 +139,24 @@ class Tool implements SiteAwareInterface
         return $this;
     }
 
+    /** Virtual property for EasyAdmin CodeEditorField (needs string, not array) */
+    public function getConfigJson(): string
+    {
+        return json_encode($this->config, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) ?: '{}';
+    }
+
+    public function setConfigJson(?string $json): static
+    {
+        if ($json === null || trim($json) === '') {
+            $this->config = [];
+        } else {
+            $decoded = json_decode($json, true);
+            $this->config = (JSON_ERROR_NONE === json_last_error()) ? $decoded : $this->config;
+        }
+
+        return $this;
+    }
+
     public function getMetaTitle(): ?string
     {
         return $this->metaTitle;

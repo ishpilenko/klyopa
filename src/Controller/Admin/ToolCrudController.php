@@ -49,11 +49,10 @@ class ToolCrudController extends AbstractCrudController
         yield SlugField::new('slug')->setTargetFieldName('name')->setColumns(6)->hideOnIndex();
         yield TextareaField::new('description')->setColumns(12)->hideOnIndex();
 
-        yield CodeEditorField::new('config')
-            ->setLanguage('yaml')
+        yield CodeEditorField::new('configJson', 'Config (JSON)')
+            ->setLanguage('js')
             ->setColumns(12)
-            ->hideOnIndex()
-            ->formatValue(fn($v) => $v ? json_encode($v, JSON_PRETTY_PRINT) : '{}');
+            ->hideOnIndex();
 
         yield TextField::new('metaTitle')->setColumns(12)->hideOnIndex();
         yield TextareaField::new('metaDescription')->setColumns(12)->hideOnIndex();
