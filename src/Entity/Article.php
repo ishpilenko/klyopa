@@ -379,9 +379,34 @@ class Article implements SiteAwareInterface
         return $this->status === ArticleStatus::Published;
     }
 
+    /** Tracks previous content to detect changes in PreUpdate. Not persisted. */
+    private ?string $_prevContent = null;
+
+    #[ORM\PostLoad]
+    public function onPostLoad(): void
+    {
+        $this->_prevContent = $this->content;
+    }
+
+    #[ORM\PrePersist]
+    public function onPrePersist(): void
+    {
+        $this->computeReadingStats();
+    }
+
     #[ORM\PreUpdate]
     public function onPreUpdate(): void
     {
         $this->updatedAt = new \DateTimeImmutable();
+        if ($this->content !== $this->_prevContent) {
+            $this->computeReadingStats();
+            $this->contentUpdatedAt = new \DateTimeImmutable();
+        }
+    }
+
+    private function computeReadingStats(): void
+    {
+        $this->wordCount = str_word_count(strip_tags($this->content));
+        $this->readingTimeMinutes = max(1, (int) round($this->wordCount / 200));
     }
 }

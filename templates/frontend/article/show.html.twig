@@ -87,21 +87,22 @@
                 {% if article.tags is not empty %}
                     <div class="tags" style="margin-top:2rem">
                         {% for tag in article.tags %}
-                            <span class="tag">#{{ tag.name }}</span>
+                            <a href="/tag/{{ tag.slug }}" class="tag">#{{ tag.name }}</a>
                         {% endfor %}
                     </div>
                 {% endif %}
 
-            </article>
+                {# Article Navigation #}
+                {% if next_article is not null %}
+                    <nav class="article-nav" style="margin-top:2.5rem;padding-top:1.5rem;border-top:1px solid var(--border)">
+                        <div style="font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin-bottom:.5rem">Next Article</div>
+                        <a href="/{{ next_article.category ? next_article.category.slug ~ '/' : '' }}{{ next_article.slug }}" style="font-size:1.05rem;font-weight:600">
+                            {{ next_article.title }}
+                        </a>
+                    </nav>
+                {% endif %}
 
-            {# Read Next bar (shown when user reaches article end) #}
-            {% if related_articles is not empty %}
-                {% set next_art = related_articles|first %}
-                <div id="read-next-bar" class="read-next-bar" hidden>
-                    <span class="read-next-label">Read next</span>
-                    <a href="/{{ next_art.category.slug }}/{{ next_art.slug }}" class="read-next-link">{{ next_art.title }}</a>
-                </div>
-            {% endif %}
+            </article>
 
             {# ── Sidebar ──────────────────────────── #}
             <aside class="sidebar">
@@ -124,4 +125,14 @@
             </section>
         {% endif %}
     </div>
+
+    {# Read Next bar (fixed bottom bar, shown when user scrolls past article) #}
+    {% set read_next = next_article ?? (related_articles is not empty ? related_articles|first : null) %}
+    {% if read_next is not null %}
+        <div id="read-next-bar" class="read-next-bar" hidden>
+            <span class="read-next-label">Read next</span>
+            <a href="/{{ read_next.category ? read_next.category.slug ~ '/' : '' }}{{ read_next.slug }}" class="read-next-link">{{ read_next.title }}</a>
+        </div>
+    {% endif %}
+
 {% endblock %}

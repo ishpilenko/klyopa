@@ -43,6 +43,7 @@ class ArticleController extends AbstractController
         }
 
         $relatedArticles = $this->articleRepository->findRelated($article->getId(), $category, 3);
+        $nextArticle = $this->articleRepository->findNext($article);
         $meta = $this->seoManager->forArticle($article, $site);
 
         return $this->render('frontend/article/show.html.twig', [
@@ -51,6 +52,7 @@ class ArticleController extends AbstractController
             'category' => $category,
             'categories' => $this->categoryRepository->findActive(),
             'related_articles' => $relatedArticles,
+            'next_article' => $nextArticle,
             'breadcrumbs' => $this->breadcrumbService->forArticle($article),
             ...$meta,
         ]);

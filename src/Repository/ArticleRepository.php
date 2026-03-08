@@ -6,6 +6,7 @@ namespace App\Repository;
 
 use App\Entity\Article;
 use App\Entity\Category;
+use App\Entity\Tag;
 use App\Enum\ArticleStatus;
 use App\Service\SiteContext;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
@@ -173,21 +174,111 @@ class ArticleRepository extends ServiceEntityRepository
             ->getArrayResult();
     }
 
-    /** Find articles related to a given one (same category, excluding self) */
-    public function findRelated(int $articleId, Category $category, int $limit = 3): array
+    /** Find articles related to a given one (same category if available, else recent from site) */
+    public function findRelated(int $articleId, ?Category $category, int $limit = 3): array
     {
-        return $this->createQueryBuilder('a')
+        $qb = $this->createQueryBuilder('a')
             ->where('a.site = :site')
-            ->andWhere('a.category = :category')
             ->andWhere('a.status = :status')
             ->andWhere('a.id != :id')
             ->setParameter('site', $this->siteContext->getSite())
-            ->setParameter('category', $category)
             ->setParameter('status', ArticleStatus::Published)
             ->setParameter('id', $articleId)
             ->orderBy('a.publishedAt', 'DESC')
+            ->setMaxResults($limit);
+
+        if ($category !== null) {
+            $qb->andWhere('a.category = :category')
+                ->setParameter('category', $category);
+        }
+
+        return $qb->getQuery()->getResult();
+    }
+
+    /** Next article in same category (older by publishedAt) */
+    public function findNext(Article $article): ?Article
+    {
+        if ($article->getPublishedAt() === null) {
+            return null;
+        }
+
+        $qb = $this->createQueryBuilder('a')
+            ->where('a.site = :site')
+            ->andWhere('a.status = :status')
+            ->andWhere('a.id != :id')
+            ->andWhere('a.publishedAt < :publishedAt')
+            ->setParameter('site', $this->siteContext->getSite())
+            ->setParameter('status', ArticleStatus::Published)
+            ->setParameter('id', $article->getId())
+            ->setParameter('publishedAt', $article->getPublishedAt())
+            ->orderBy('a.publishedAt', 'DESC')
+            ->setMaxResults(1);
+
+        if ($article->getCategory() !== null) {
+            $qb->andWhere('a.category = :category')
+                ->setParameter('category', $article->getCategory());
+        }
+
+        return $qb->getQuery()->getOneOrNullResult();
+    }
+
+    /** Previous article in same category (newer by publishedAt) */
+    public function findPrev(Article $article): ?Article
+    {
+        if ($article->getPublishedAt() === null) {
+            return null;
+        }
+
+        $qb = $this->createQueryBuilder('a')
+            ->where('a.site = :site')
+            ->andWhere('a.status = :status')
+            ->andWhere('a.id != :id')
+            ->andWhere('a.publishedAt > :publishedAt')
+            ->setParameter('site', $this->siteContext->getSite())
+            ->setParameter('status', ArticleStatus::Published)
+            ->setParameter('id', $article->getId())
+            ->setParameter('publishedAt', $article->getPublishedAt())
+            ->orderBy('a.publishedAt', 'ASC')
+            ->setMaxResults(1);
+
+        if ($article->getCategory() !== null) {
+            $qb->andWhere('a.category = :category')
+                ->setParameter('category', $article->getCategory());
+        }
+
+        return $qb->getQuery()->getOneOrNullResult();
+    }
+
+    /** @return Article[] */
+    public function findByTag(Tag $tag, int $limit = 20, int $offset = 0): array
+    {
+        return $this->createQueryBuilder('a')
+            ->join('a.tags', 't')
+            ->where('a.site = :site')
+            ->andWhere('a.status = :status')
+            ->andWhere('t = :tag')
+            ->setParameter('site', $this->siteContext->getSite())
+            ->setParameter('status', ArticleStatus::Published)
+            ->setParameter('tag', $tag)
+            ->orderBy('a.publishedAt', 'DESC')
             ->setMaxResults($limit)
+            ->setFirstResult($offset)
             ->getQuery()
             ->getResult();
+    }
+
+    public function countByTag(Tag $tag): int
+    {
+        return (int) $this->createQueryBuilder('a')
+            ->select('COUNT(a.id)')
+            ->join('a.tags', 't')
+            ->where('a.site = :site')
+            ->andWhere('a.status = :status')
+            ->andWhere('t = :tag')
+            ->setParameter('site', $this->siteContext->getSite())
+            ->setParameter('status', ArticleStatus::Published)
+            ->setParameter('tag', $tag)
+            ->getQuery()
+            ->getSingleScalarResult();
     }
 }

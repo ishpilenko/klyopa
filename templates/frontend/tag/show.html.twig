@@ -1,0 +1,52 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ meta_title }}{% endblock %}
+
+{% block body %}
+
+    {# ── Page Hero ───────────────────────────────── #}
+    <section class="page-hero">
+        <div class="container">
+            <nav class="breadcrumb" aria-label="Breadcrumb">
+                <ol>
+                    <li><a href="/">Home</a></li>
+                    <li aria-current="page">#{{ tag.name }}</li>
+                </ol>
+            </nav>
+            <h1>#{{ tag.name }}</h1>
+            <p>{{ meta_description }}</p>
+        </div>
+    </section>
+
+    <div class="container">
+        <div class="layout">
+
+            {# ── Articles ────────────────────────── #}
+            <div>
+                {% if articles is not empty %}
+                    <div class="article-grid">
+                        {% for article in articles %}
+                            {{ include('components/article_card.html.twig', {article: article}) }}
+                        {% endfor %}
+                    </div>
+
+                    {{ include('components/pagination.html.twig', {
+                        current_page: current_page,
+                        total_pages: total_pages,
+                        base_url: '/tag/' ~ tag.slug
+                    }) }}
+                {% else %}
+                    <div class="empty-state">
+                        <h3>No articles tagged #{{ tag.name }} yet</h3>
+                        <p>Check back soon for the latest content.</p>
+                    </div>
+                {% endif %}
+            </div>
+
+            {# ── Sidebar ──────────────────────────── #}
+            <aside class="sidebar">
+                {{ include('components/sidebar.html.twig', {categories: categories}) }}
+            </aside>
+        </div>
+    </div>
+{% endblock %}
