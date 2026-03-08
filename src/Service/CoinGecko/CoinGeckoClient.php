@@ -171,6 +171,37 @@ class CoinGeckoClient
     }
 
     /**
+     * Price chart for a specific date range (Unix timestamps).
+     * Returns array of [timestamp_ms, price] pairs; null on error.
+     */
+    public function getMarketChartRange(
+        string $coinId,
+        string $vsCurrency,
+        int $from,
+        int $to,
+    ): ?array {
+        // Normalise $to to day boundary so the cache key is stable within the same day
+        $toDay = (new \DateTimeImmutable('today'))->getTimestamp();
+        $toCached = min($to, $toDay);
+        // Round $from down to midnight UTC
+        $fromDay = (int) (new \DateTimeImmutable(date('Y-m-d', $from)))->getTimestamp();
+
+        $key = sprintf('cg_chart_range_%s_%s_%d_%d', $coinId, $vsCurrency, $fromDay, $toCached);
+
+        return $this->cache->get($key, function (ItemInterface $item) use ($coinId, $vsCurrency, $from, $to): ?array {
+            $item->expiresAfter(self::TTL_HISTORY);
+
+            $data = $this->fetch('/coins/' . $coinId . '/market_chart/range', [
+                'vs_currency' => $vsCurrency,
+                'from'        => (string) $from,
+                'to'          => (string) $to,
+            ]);
+
+            return $data['prices'] ?? null;
+        });
+    }
+
+    /**
      * Known symbol → CoinGecko ID mappings for top coins.
      * Avoids false positives in the coin list (e.g. "batcat" matching "btc").
      */

@@ -53,9 +53,12 @@ class PublicPagesTest extends WebTestCase
         yield 'crypto: article in defi'             => [$c, '/defi/top-defi-protocols-total-value-locked-2026'];
         yield 'crypto: article 404'                 => [$c, '/bitcoin/this-slug-does-not-exist', 404];
 
-        // Tools
+        // Tools (DB-driven generic + dedicated Phase-8 routes)
         yield 'crypto: tool profit-calculator'      => [$c, '/tools/crypto-profit-calculator'];
         yield 'crypto: tool dca-calculator'         => [$c, '/tools/dca-calculator'];
+        yield 'crypto: tool mining-calculator'      => [$c, '/tools/mining-calculator'];
+        yield 'crypto: tool crypto-tax-calculator'  => [$c, '/tools/crypto-tax-calculator'];
+        yield 'crypto: tool gas-tracker'            => [$c, '/tools/gas-tracker'];
         yield 'crypto: tool 404'                    => [$c, '/tools/nonexistent-tool', 404];
 
         // Prices (CoinGecko API — falls back gracefully on rate limit)

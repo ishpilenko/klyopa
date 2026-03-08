@@ -1,0 +1,308 @@
+{% extends 'frontend/tools/base_tool.html.twig' %}
+
+{% block title %}{{ meta_title }}{% endblock %}
+{% block og_title %}{{ meta_title }}{% endblock %}
+{% block og_description %}{{ meta_description }}{% endblock %}
+
+{% block schema_markup %}
+    {{ schema_breadcrumb(breadcrumbs, app.request.schemeAndHttpHost) }}
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "{{ coin_data.name }} Mining Profitability Calculator",
+        "applicationCategory": "FinanceApplication",
+        "operatingSystem": "Web",
+        "url": "{{ app.request.schemeAndHttpHost }}/tools/mining-calculator",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+    }
+    </script>
+{% endblock %}
+
+{# Pass server-side mining data to JS #}
+{% block critical_css %}
+    <script>
+    window.MINING_DATA = {{ {
+        id: coin_data.id,
+        name: coin_data.name,
+        symbol: coin_data.symbol,
+        blockReward: coin_data.blockReward,
+        blockTime: coin_data.blockTime,
+        networkHashrate: coin_data.networkHashrate,
+        hashrateUnit: coin_data.hashrateUnit,
+        hashrateMultiplier: coin_data.hashrateMultiplier,
+        currentPrice: coin_price
+    }|json_encode(constant('JSON_UNESCAPED_UNICODE'))|raw }};
+    window.MINING_COINS = {{ mining_coins|keys|json_encode|raw }};
+    </script>
+{% endblock %}
+
+{% block tool_title %}{{ coin_data.name }} Mining Calculator — Is Mining Profitable?{% endblock %}
+
+{% block tool_intro %}
+    <p>Calculate {{ coin_data.name }} ({{ coin_data.symbol }}) mining profitability based on
+       your hashrate, power consumption, and electricity cost.</p>
+{% endblock %}
+
+{% block tool_widget %}
+<div class="calc-widget" style="max-width:680px">
+
+    <form id="mining-form" novalidate>
+        <div class="tool-fields">
+
+            <div class="form-group">
+                <label for="m-coin">Cryptocurrency</label>
+                <select id="m-coin" class="form-control"
+                        onchange="location.href='/tools/mining-calculator/'+this.value">
+                    {% for slug, coinDef in mining_coins %}
+                        <option value="{{ slug }}" {{ slug == coin ? 'selected' : '' }}>
+                            {{ coinDef.name }} ({{ coinDef.symbol }})
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="m-hashrate">Hashrate</label>
+                <div class="input-wrapper">
+                    <input type="number" id="m-hashrate" class="form-control has-suffix"
+                           value="{{ coin_data.defaultHashrate }}" min="0" step="any">
+                    <span class="input-addon input-addon--suffix" id="m-hashrate-unit">{{ coin_data.hashrateUnit }}</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="m-power">Power Consumption</label>
+                <div class="input-wrapper">
+                    <input type="number" id="m-power" class="form-control has-suffix"
+                           value="{{ coin_data.defaultPower }}" min="0" step="1">
+                    <span class="input-addon input-addon--suffix">W</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="m-elec">Electricity Cost</label>
+                <div class="input-wrapper">
+                    <span class="input-addon input-addon--prefix">$</span>
+                    <input type="number" id="m-elec" class="form-control has-prefix has-suffix"
+                           value="0.10" min="0" step="0.01">
+                    <span class="input-addon input-addon--suffix">/kWh</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="m-pool">Pool Fee</label>
+                <div class="input-wrapper">
+                    <input type="number" id="m-pool" class="form-control has-suffix"
+                           value="1" min="0" max="20" step="0.1">
+                    <span class="input-addon input-addon--suffix">%</span>
+                </div>
+            </div>
+        </div>
+
+        <button type="button" class="btn btn-calculate" id="btn-mining">
+            Calculate Profitability
+        </button>
+    </form>
+
+    {# Results table #}
+    <div id="mining-results" hidden style="margin-top:1.5rem">
+        <table class="mining-table">
+            <thead>
+                <tr>
+                    <th class="col-period">Period</th>
+                    <th>Revenue</th>
+                    <th>Electricity</th>
+                    <th class="col-profit">Profit</th>
+                    <th>Coins</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr id="r-daily">   <td>Daily</td>  <td id="rev-d">—</td><td id="elec-d">—</td><td id="prf-d">—</td><td id="coins-d">—</td></tr>
+                <tr id="r-weekly">  <td>Weekly</td> <td id="rev-w">—</td><td id="elec-w">—</td><td id="prf-w">—</td><td id="coins-w">—</td></tr>
+                <tr id="r-monthly"> <td>Monthly</td><td id="rev-m">—</td><td id="elec-m">—</td><td id="prf-m">—</td><td id="coins-m">—</td></tr>
+                <tr id="r-yearly">  <td>Yearly</td> <td id="rev-y">—</td><td id="elec-y">—</td><td id="prf-y">—</td><td id="coins-y">—</td></tr>
+            </tbody>
+        </table>
+        <p id="r-breakeven" style="margin-top:.875rem;font-size:.9rem;color:var(--color-text-muted)"></p>
+    </div>
+</div>
+{% endblock %}
+
+{% block tool_content %}
+<div class="tool-content">
+    <h2>Network Statistics — {{ coin_data.name }}</h2>
+    <p>
+        Block reward: <strong>{{ coin_data.blockReward }} {{ coin_data.symbol }}</strong> &ensp;·&ensp;
+        Block time: <strong>{{ coin_data.blockTime }}s</strong> &ensp;·&ensp;
+        {% if coin_price %}
+        Current price: <strong>${{ coin_price|number_format(coin_price >= 1 ? 2 : 8) }}</strong>
+        {% endif %}
+    </p>
+    <p class="text-muted" style="font-size:.875rem">Network hashrate data updated every 6 hours via
+       <code>bin/console app:update:mining-data</code>.</p>
+
+    <h2>Popular Mining Hardware</h2>
+    <table class="preset-table">
+        <thead>
+            <tr><th>ASIC / Miner</th><th>Coin</th><th>Hashrate</th><th>Power</th><th></th></tr>
+        </thead>
+        <tbody>
+            {% for hw in hardware_presets %}
+            <tr>
+                <td>{{ hw.name }}</td>
+                <td>{{ mining_coins[hw.coin].symbol ?? hw.coin|upper }}</td>
+                <td>{{ hw.hashrate }} {{ hw.hashrateUnit }}</td>
+                <td>{{ hw.power }} W</td>
+                <td>
+                    {% if hw.coin == coin %}
+                        <button type="button" class="btn-preset"
+                                onclick="applyPreset({{ hw.hashrate }}, {{ hw.power }})">
+                            Use
+                        </button>
+                    {% else %}
+                        <a href="/tools/mining-calculator/{{ hw.coin }}" class="btn-preset">View</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h2>How Crypto Mining Works</h2>
+    <p>Miners compete to solve a cryptographic puzzle. The winner adds the next block to the
+       blockchain and earns the block reward plus transaction fees. Your share of the reward
+       is proportional to your hashrate relative to the total network hashrate.</p>
+
+    <p>Mining profitability depends on the coin price, your hardware efficiency (hashrate per watt),
+       and electricity cost. As more miners join, difficulty increases and individual earnings shrink.
+       Always check break-even electricity cost before investing in hardware.</p>
+</div>
+{% endblock %}
+
+{% block tool_faq %}
+<section class="tool-faq faq-section">
+    <h2>Frequently Asked Questions</h2>
+
+    <div class="faq-item">
+        <h3>How is mining profitability calculated?</h3>
+        <p>Daily coins = (Your hashrate ÷ Network hashrate) × Blocks per day × Block reward × (1 − Pool fee).
+           Revenue = Daily coins × Coin price. Profit = Revenue − Electricity cost.</p>
+    </div>
+
+    <div class="faq-item">
+        <h3>What is a good electricity price for crypto mining?</h3>
+        <p>Below $0.07/kWh is ideal for Bitcoin mining. At $0.10/kWh, most modern ASICs remain
+           profitable at current BTC prices. Above $0.15/kWh, profitability becomes marginal.</p>
+    </div>
+
+    <div class="faq-item">
+        <h3>Is Bitcoin mining still profitable in 2026?</h3>
+        <p>It depends on your electricity cost and hardware. With a modern ASIC at $0.07–$0.10/kWh,
+           Bitcoin mining remains profitable. The April 2024 halving reduced the block reward to
+           3.125 BTC, requiring higher BTC prices or cheaper power to maintain margins.</p>
+    </div>
+
+    <div class="faq-item">
+        <h3>What is break-even electricity cost?</h3>
+        <p>The electricity price at which mining profit = 0. If your actual electricity cost is
+           below this number, mining is profitable. Use the calculator above to find your break-even.</p>
+    </div>
+
+    <div class="faq-item">
+        <h3>Can I mine Monero (XMR) with a CPU?</h3>
+        <p>Yes — Monero uses the RandomX algorithm specifically designed to be CPU-friendly and
+           ASIC-resistant. A modern CPU (Ryzen 9, Intel Core i9) achieves 10–20 KH/s.</p>
+    </div>
+</section>
+{% endblock %}
+
+{% block tool_related %}
+<div class="tool-related">
+    <h3>Related Tools</h3>
+    <div class="tool-related-links">
+        <a href="/tools/crypto-profit-calculator">Profit/Loss Calculator</a>
+        <a href="/tools/dca-calculator">DCA Calculator</a>
+        <a href="/tools/crypto-tax-calculator">Tax Calculator</a>
+        <a href="/price/bitcoin">Bitcoin Price</a>
+    </div>
+</div>
+{% endblock %}
+
+{% block tool_js %}
+<script>
+(function () {
+  'use strict';
+
+  var d = window.MINING_DATA;
+  if (!d) return;
+
+  function fmtUsd(v) {
+    if (!isFinite(v)) return '—';
+    return '$' + Math.abs(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  }
+  function fmtCoins(v, sym) {
+    if (!isFinite(v)) return '—';
+    var decimals = v < 0.001 ? 8 : (v < 1 ? 6 : 4);
+    return v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:decimals});
+  }
+  function colorCell(id, value) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.classList.remove('value-positive','value-negative');
+    if (value > 0) el.classList.add('value-positive');
+    else if (value < 0) el.classList.add('value-negative');
+  }
+
+  function calc() {
+    var hashrateInput = parseFloat(document.getElementById('m-hashrate').value) || 0;
+    var power         = parseFloat(document.getElementById('m-power').value)    || 0;
+    var elecCost      = parseFloat(document.getElementById('m-elec').value)     || 0;
+    var poolFee       = parseFloat(document.getElementById('m-pool').value)     || 0;
+
+    // Convert hashrate to H/s
+    var hashrateHs = hashrateInput * d.hashrateMultiplier;
+    if (hashrateHs <= 0) { document.getElementById('mining-results').hidden = true; return; }
+
+    var price      = d.currentPrice || 0;
+    var netHash    = d.networkHashrate;
+    var blocksPerDay = 86400 / d.blockTime;
+    var dailyCoins = blocksPerDay * d.blockReward * (hashrateHs / netHash) * (1 - poolFee / 100);
+
+    var dailyRevenue = dailyCoins * price;
+    var dailyElec    = (power / 1000) * 24 * elecCost;
+    var dailyProfit  = dailyRevenue - dailyElec;
+
+    var factors = { d: 1, w: 7, m: 30.44, y: 365.25 };
+    for (var suffix in factors) {
+      var f = factors[suffix];
+      document.getElementById('rev-'   + suffix).textContent = fmtUsd(dailyRevenue * f);
+      document.getElementById('elec-'  + suffix).textContent = fmtUsd(dailyElec    * f);
+      document.getElementById('prf-'   + suffix).textContent = fmtUsd(dailyProfit  * f);
+      document.getElementById('coins-' + suffix).textContent = fmtCoins(dailyCoins * f) + ' ' + d.symbol;
+      colorCell('prf-' + suffix, dailyProfit);
+    }
+
+    // Break-even electricity
+    var breakEven = dailyCoins > 0 && power > 0
+      ? (dailyRevenue / ((power / 1000) * 24)).toFixed(4)
+      : null;
+    document.getElementById('r-breakeven').textContent = breakEven
+      ? 'Break-even electricity cost: $' + breakEven + '/kWh'
+      : '';
+
+    document.getElementById('mining-results').hidden = false;
+  }
+
+  window.applyPreset = function(hashrate, power) {
+    document.getElementById('m-hashrate').value = hashrate;
+    document.getElementById('m-power').value    = power;
+    calc();
+  };
+
+  document.getElementById('btn-mining').addEventListener('click', calc);
+  document.getElementById('mining-form').addEventListener('input', CalcHelpers.debounce(calc, 300));
+  calc();
+}());
+</script>
+{% endblock %}

@@ -1,0 +1,372 @@
+{% extends 'frontend/tools/base_tool.html.twig' %}
+
+{% block title %}{{ meta_title }}{% endblock %}
+{% block og_title %}{{ meta_title }}{% endblock %}
+{% block og_description %}{{ meta_description }}{% endblock %}
+
+{% block schema_markup %}
+    {{ schema_breadcrumb(breadcrumbs, app.request.schemeAndHttpHost) }}
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "DCA (Dollar Cost Averaging) Calculator",
+        "applicationCategory": "FinanceApplication",
+        "operatingSystem": "Web",
+        "url": "{{ app.request.schemeAndHttpHost }}/tools/dca-calculator",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+            {
+                "@type": "Question",
+                "name": "What is DCA in crypto?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Dollar Cost Averaging (DCA) means investing a fixed amount at regular intervals regardless of price. This reduces the impact of volatility — you buy more coins when cheap and fewer when expensive."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Is DCA a good strategy for Bitcoin?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "DCA has historically been very effective for Bitcoin and other major cryptocurrencies over multi-year periods, as it avoids the risk of investing a lump sum at market peaks."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "How often should I DCA into crypto?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Weekly and monthly DCA strategies both work well. Weekly provides smoother cost averaging; monthly is more practical for most budgets. Research shows the frequency matters less than consistency."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Does DCA work in a bear market?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Yes — DCA is particularly powerful in bear markets because you accumulate more coins at lower prices. When the market recovers, the average purchase price is much lower than the current price."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "What is average cost per coin in DCA?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Average cost per coin = Total invested ÷ Total coins purchased. This is always lower than a simple average of all prices paid, because you buy more coins when prices are low."
+                }
+            }
+        ]
+    }
+    </script>
+{% endblock %}
+
+{% block tool_title %}DCA Calculator — Dollar Cost Averaging for {{ coin_name }}{% endblock %}
+
+{% block tool_intro %}
+    <p>Calculate returns of investing a fixed amount into {{ coin_name }} at regular intervals.
+       Uses real historical price data from CoinGecko.</p>
+{% endblock %}
+
+{% block tool_widget %}
+<div class="calc-widget" style="max-width:720px">
+
+    <form id="dca-form" novalidate>
+        <div class="tool-fields">
+            <div class="form-group">
+                <label for="dca-coin">Cryptocurrency</label>
+                <select id="dca-coin" class="form-control">
+                    {% for c in top_coins %}
+                        <option value="{{ c.id }}" {{ c.id == selected_coin ? 'selected' : '' }}>
+                            {{ c.name }} ({{ c.symbol|upper }})
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="dca-amount">Investment per period</label>
+                <div class="input-wrapper">
+                    <span class="input-addon input-addon--prefix">$</span>
+                    <input type="number" id="dca-amount" class="form-control has-prefix"
+                           value="100" min="1" step="any" placeholder="100">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="dca-freq">Frequency</label>
+                <select id="dca-freq" class="form-control">
+                    <option value="weekly" selected>Weekly</option>
+                    <option value="monthly">Monthly</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="dca-start">Start Date</label>
+                <input type="date" id="dca-start" class="form-control"
+                       value="2020-01-01" min="2013-01-01"
+                       max="{{ 'yesterday'|date('Y-m-d') }}">
+            </div>
+        </div>
+
+        <button type="button" class="btn btn-calculate" id="btn-dca">
+            Calculate DCA Returns
+        </button>
+    </form>
+
+    {# Results — hidden until JS populates them #}
+    <div id="dca-results" hidden style="margin-top:1.5rem">
+        <div class="results-grid" style="grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:.75rem;margin-bottom:1.25rem">
+            <div class="result-item"><span class="result-label">Total Invested</span><span class="result-value" id="r-invested">—</span></div>
+            <div class="result-item"><span class="result-label">Current Value</span><span class="result-value" id="r-value">—</span></div>
+            <div class="result-item result-item--highlight"><span class="result-label">Profit / Loss</span><span class="result-value" id="r-profit">—</span></div>
+            <div class="result-item result-item--highlight"><span class="result-label">ROI</span><span class="result-value" id="r-roi">—</span></div>
+            <div class="result-item"><span class="result-label">Total Coins</span><span class="result-value" id="r-coins">—</span></div>
+            <div class="result-item"><span class="result-label">Avg Cost / Coin</span><span class="result-value" id="r-avg">—</span></div>
+            <div class="result-item"><span class="result-label"># of Purchases</span><span class="result-value" id="r-count">—</span></div>
+        </div>
+
+        {# SVG chart rendered by JS #}
+        <div class="dca-chart-wrap">
+            <div id="dca-chart-placeholder" class="dca-chart-placeholder">
+                Portfolio value chart will appear here after calculation.
+            </div>
+            <svg id="dca-chart-svg" class="dca-chart-svg" viewBox="0 0 600 200"
+                 style="display:none" aria-label="DCA portfolio chart"></svg>
+        </div>
+    </div>
+
+    <div id="dca-error" style="display:none" class="alert-error"></div>
+</div>
+{% endblock %}
+
+{% block tool_content %}
+<div class="tool-content">
+    <h2>What is Dollar Cost Averaging (DCA)?</h2>
+    <p>Dollar Cost Averaging (DCA) is an investment strategy where you invest a fixed amount of money
+       at regular intervals — for example, $100 every week — regardless of the current price.
+       When prices are high, you buy fewer coins. When prices are low, you buy more. Over time,
+       this smooths out your average purchase price.</p>
+
+    <p>DCA removes the need to "time the market" — one of the hardest things to do in crypto.
+       Studies consistently show that most investors who try to buy the dip end up buying too early
+       or too late. DCA eliminates this risk by automating the buying process.</p>
+
+    <h2>DCA vs Lump-Sum Investing</h2>
+    <p>Lump-sum investing (putting all your money in at once) outperforms DCA about 2/3 of the time
+       in traditional markets, simply because markets tend to go up over time. However, in the volatile
+       crypto market, DCA provides significant psychological and risk-management benefits — you never
+       risk investing everything at a temporary peak.</p>
+
+    <p>For long-term crypto believers, DCA is the most practical and stress-free strategy.</p>
+
+    <h2>Historical DCA Examples</h2>
+    <p>Investing $100/week into Bitcoin from January 2020 to March 2026 (~$31,200 total) would have
+       resulted in significant gains due to Bitcoin's price appreciation from ~$7,000 to current prices.
+       Run the calculator above to see the exact numbers.</p>
+</div>
+{% endblock %}
+
+{% block tool_faq %}
+<section class="tool-faq faq-section">
+    <h2>Frequently Asked Questions</h2>
+
+    <div class="faq-item">
+        <h3>What is DCA in crypto?</h3>
+        <p>DCA (Dollar Cost Averaging) means investing a fixed amount at regular intervals regardless
+           of the current price. You buy more when prices are low and less when they're high, lowering
+           your average cost over time.</p>
+    </div>
+
+    <div class="faq-item">
+        <h3>Is DCA a good strategy for Bitcoin?</h3>
+        <p>Historically, yes. DCA into Bitcoin over any 4+ year period has been highly profitable.
+           It also removes the emotional stress of trying to time the market.</p>
+    </div>
+
+    <div class="faq-item">
+        <h3>How often should I DCA into crypto?</h3>
+        <p>Weekly and monthly strategies both work. Research shows that frequency matters less than
+           consistency. Pick an interval that aligns with your income (e.g., monthly after payday).</p>
+    </div>
+
+    <div class="faq-item">
+        <h3>Does DCA work in a bear market?</h3>
+        <p>DCA is particularly powerful in bear markets. You accumulate coins cheaply during the dip,
+           so when the market recovers, your average cost is well below the recovery price — amplifying gains.</p>
+    </div>
+
+    <div class="faq-item">
+        <h3>What is average cost per coin?</h3>
+        <p>Total invested ÷ total coins purchased. This is always lower than a straight average of all
+           purchase prices because you buy more coins when prices are low.</p>
+    </div>
+</section>
+{% endblock %}
+
+{% block tool_related %}
+<div class="tool-related">
+    <h3>Related Tools</h3>
+    <div class="tool-related-links">
+        <a href="/tools/crypto-profit-calculator">Profit/Loss Calculator</a>
+        <a href="/tools/investment-calculator/bitcoin">Investment Calculator</a>
+        <a href="/tools/crypto-tax-calculator">Tax Calculator</a>
+        <a href="/tools/mining-calculator">Mining Calculator</a>
+    </div>
+</div>
+{% endblock %}
+
+{% block tool_js %}
+<script>
+(function () {
+  'use strict';
+
+  var btn       = document.getElementById('btn-dca');
+  var results   = document.getElementById('dca-results');
+  var errorBox  = document.getElementById('dca-error');
+  var svg       = document.getElementById('dca-chart-svg');
+  var placeholder = document.getElementById('dca-chart-placeholder');
+
+  function fmtUsd(v) {
+    if (v === null || !isFinite(v)) return '—';
+    var abs = Math.abs(v), decimals = abs < 0.01 ? 4 : 2;
+    var sign = v < 0 ? '−$' : '$';
+    return sign + abs.toLocaleString('en-US',{minimumFractionDigits:decimals,maximumFractionDigits:decimals});
+  }
+  function fmtCrypto(v) {
+    if (v === null || !isFinite(v)) return '—';
+    var d = v < 0.01 ? 8 : 4;
+    return v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:d});
+  }
+  function fmtPct(v) {
+    if (v === null || !isFinite(v)) return '—';
+    return (v >= 0 ? '+' : '') + v.toFixed(2) + '%';
+  }
+  function colorEl(id, value) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.classList.remove('value-positive','value-negative','value-neutral');
+    if (value > 0) el.classList.add('value-positive');
+    else if (value < 0) el.classList.add('value-negative');
+  }
+
+  function drawChart(purchases, currentPrice) {
+    if (!purchases || purchases.length < 2) return;
+
+    var W = 600, H = 180, PAD = { top:10, right:10, bottom:24, left:60 };
+    var innerW = W - PAD.left - PAD.right;
+    var innerH = H - PAD.top - PAD.bottom;
+
+    // Build parallel arrays
+    var invested = purchases.map(function(p){ return p.totalInvestedAtDate; });
+    var portfolio = purchases.map(function(p){ return p.totalCoinsAtDate * (currentPrice || p.price); });
+
+    var minV = Math.min.apply(null, invested.concat(portfolio));
+    var maxV = Math.max.apply(null, invested.concat(portfolio));
+    if (maxV === minV) maxV = minV + 1;
+
+    var n = purchases.length;
+
+    function scaleX(i) { return PAD.left + (i / (n - 1)) * innerW; }
+    function scaleY(v) { return PAD.top + innerH - ((v - minV) / (maxV - minV)) * innerH; }
+
+    function polyPoints(arr) {
+      return arr.map(function(v,i){ return scaleX(i)+','+scaleY(v); }).join(' ');
+    }
+
+    // Build fill polygon (area between lines)
+    var fillPts = portfolio.map(function(v,i){ return scaleX(i)+','+scaleY(v); });
+    for (var i = n - 1; i >= 0; i--) { fillPts.push(scaleX(i)+','+scaleY(invested[i])); }
+    var isProfit = portfolio[n-1] >= invested[n-1];
+    var fillColor = isProfit ? 'rgba(22,163,74,0.12)' : 'rgba(220,38,38,0.12)';
+    var lineColor = isProfit ? '#16a34a' : '#dc2626';
+
+    // Y-axis labels
+    var yLabels = [minV, (minV+maxV)/2, maxV].map(function(v,i){
+      var y = scaleY(v);
+      var txt = v >= 1000 ? '$'+(v/1000).toFixed(0)+'K' : '$'+v.toFixed(0);
+      return '<text x="'+(PAD.left-6)+'" y="'+(y+4)+'" font-size="10" text-anchor="end" fill="currentColor" opacity=".5">'+txt+'</text>';
+    });
+
+    // X-axis labels (first, mid, last dates)
+    var xLabelIdxs = [0, Math.floor(n/2), n-1];
+    var xLabels = xLabelIdxs.map(function(i){
+      return '<text x="'+scaleX(i)+'" y="'+(H-4)+'" font-size="10" text-anchor="middle" fill="currentColor" opacity=".5">'+purchases[i].date.slice(0,7)+'</text>';
+    });
+
+    svg.setAttribute('viewBox', '0 0 '+W+' '+H);
+    svg.innerHTML = [
+      '<polygon points="'+fillPts.join(' ')+'" fill="'+fillColor+'" />',
+      '<polyline points="'+polyPoints(invested)+'" fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4 3" />',
+      '<polyline points="'+polyPoints(portfolio)+'" fill="none" stroke="'+lineColor+'" stroke-width="2" />',
+      yLabels.join(''),
+      xLabels.join(''),
+      '<line x1="'+PAD.left+'" y1="'+PAD.top+'" x2="'+PAD.left+'" y2="'+(H-PAD.bottom)+'" stroke="currentColor" stroke-width="1" opacity=".2"/>',
+      '<line x1="'+PAD.left+'" y1="'+(H-PAD.bottom)+'" x2="'+(W-PAD.right)+'" y2="'+(H-PAD.bottom)+'" stroke="currentColor" stroke-width="1" opacity=".2"/>',
+    ].join('');
+
+    placeholder.style.display = 'none';
+    svg.style.display = 'block';
+  }
+
+  function calculate() {
+    var coin  = document.getElementById('dca-coin').value;
+    var amt   = parseFloat(document.getElementById('dca-amount').value) || 100;
+    var freq  = document.getElementById('dca-freq').value;
+    var start = document.getElementById('dca-start').value;
+
+    if (!start) return;
+
+    CalcHelpers.setLoading(btn, true);
+    errorBox.style.display = 'none';
+    results.hidden = true;
+
+    var url = '/api/v1/dca/calculate?coin='+encodeURIComponent(coin)
+      +'&startDate='+encodeURIComponent(start)
+      +'&amount='+encodeURIComponent(amt)
+      +'&frequency='+encodeURIComponent(freq);
+
+    fetch(url)
+      .then(function(r){ return r.json(); })
+      .then(function(data) {
+        CalcHelpers.setLoading(btn, false);
+        if (data.error) {
+          errorBox.textContent = data.error;
+          errorBox.style.display = 'block';
+          return;
+        }
+        var s = data.summary;
+        document.getElementById('r-invested').textContent = fmtUsd(s.totalInvested);
+        document.getElementById('r-value').textContent    = fmtUsd(s.currentValue);
+        document.getElementById('r-coins').textContent    = fmtCrypto(s.totalCoins);
+        document.getElementById('r-avg').textContent      = fmtUsd(s.avgCostPerCoin);
+        document.getElementById('r-count').textContent    = s.numPurchases;
+
+        document.getElementById('r-profit').textContent = fmtUsd(s.profit);
+        colorEl('r-profit', s.profit);
+        document.getElementById('r-roi').textContent = fmtPct(s.percentReturn);
+        colorEl('r-roi', s.percentReturn);
+
+        results.hidden = false;
+        drawChart(data.purchases, s.currentPrice);
+
+        // Update URL for easy sharing
+        history.replaceState(null, '', '/tools/dca-calculator/'+coin+'?amount='+amt+'&freq='+freq+'&start='+start);
+      })
+      .catch(function(e) {
+        CalcHelpers.setLoading(btn, false);
+        errorBox.textContent = 'Could not fetch data. Please try again.';
+        errorBox.style.display = 'block';
+      });
+  }
+
+  btn.addEventListener('click', calculate);
+}());
+</script>
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+<article class="tool-page">
+
+    {# ── Page Hero ── #}
+    <section class="page-hero">
+        <div class="container">
+            {{ include('components/breadcrumb.html.twig', {items: breadcrumbs}) }}
+            <h1>{% block tool_title %}{% endblock %}</h1>
+            <div class="tool-intro">
+                {% block tool_intro %}{% endblock %}
+            </div>
+        </div>
+    </section>
+
+    <div class="container tool-page-inner">
+
+        {# ── Calculator Widget ── #}
+        <div class="tool-widget" id="tool-widget" aria-live="polite">
+            {% block tool_widget %}{% endblock %}
+        </div>
+
+        {# ── Educational content ── #}
+        <div class="tool-content">
+            {% block tool_content %}{% endblock %}
+        </div>
+
+        {# ── FAQ ── #}
+        {% block tool_faq %}{% endblock %}
+
+        {# ── Related Tools ── #}
+        <div class="tool-related">
+            {% block tool_related %}{% endblock %}
+        </div>
+
+    </div>
+
+</article>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script src="/assets/js/calc-helpers.js" defer></script>
+    {% block tool_js %}{% endblock %}
+{% endblock %}

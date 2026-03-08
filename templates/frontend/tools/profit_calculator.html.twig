@@ -1,0 +1,297 @@
+{% extends 'frontend/tools/base_tool.html.twig' %}
+
+{% block title %}{{ meta_title }}{% endblock %}
+{% block og_title %}{{ meta_title }}{% endblock %}
+{% block og_description %}{{ meta_description }}{% endblock %}
+
+{% block schema_markup %}
+    {{ schema_breadcrumb(breadcrumbs, app.request.schemeAndHttpHost) }}
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Crypto Profit/Loss Calculator",
+        "applicationCategory": "FinanceApplication",
+        "operatingSystem": "Web",
+        "url": "{{ app.request.schemeAndHttpHost }}/tools/crypto-profit-calculator",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "description": "{{ meta_description }}"
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+            {
+                "@type": "Question",
+                "name": "How do I calculate crypto profit?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Crypto profit = (Sell price × Quantity − Sell fee) − (Buy price × Quantity + Buy fee). Our calculator handles the fee math automatically."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "How do crypto trading fees affect profit?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Fees are charged at purchase and sale. A 0.1% fee on both sides of a $10,000 trade costs $20 total — which can significantly erode profits on small moves."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "What is a good ROI for cryptocurrency?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Any positive ROI is a gain. Bitcoin has averaged roughly 100–200% annually over its history, though past performance does not guarantee future returns."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Do I need to pay taxes on crypto profits?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "In most countries, yes. Crypto gains are taxed as capital gains. Use our Crypto Tax Calculator to estimate your liability, and consult a tax professional for advice."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "How do I track my crypto profits over time?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Use portfolio trackers (CoinGecko Portfolio, Delta) and record every trade with buy/sell price and fees. Our DCA Calculator also helps you track recurring investments."
+                }
+            }
+        ]
+    }
+    </script>
+{% endblock %}
+
+{% block tool_title %}Crypto Profit/Loss Calculator{% endblock %}
+
+{% block tool_intro %}
+    <p>Calculate your cryptocurrency trading profit or loss, including exchange fees.</p>
+{% endblock %}
+
+{% block tool_widget %}
+<div class="calc-widget">
+    <form id="profit-form" novalidate>
+
+        <div class="tool-fields">
+            <div class="form-group">
+                <label for="buy-price">Buy Price (per coin)</label>
+                <div class="input-wrapper">
+                    <span class="input-addon input-addon--prefix">$</span>
+                    <input type="number" id="buy-price" class="form-control has-prefix"
+                           placeholder="e.g. 30000" min="0" step="any" value="30000">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="sell-price">Sell Price (per coin)</label>
+                <div class="input-wrapper">
+                    <span class="input-addon input-addon--prefix">$</span>
+                    <input type="number" id="sell-price" class="form-control has-prefix"
+                           placeholder="e.g. 60000" min="0" step="any" value="60000">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="quantity">Quantity (coins)</label>
+                <input type="number" id="quantity" class="form-control"
+                       placeholder="e.g. 0.5" min="0" step="any" value="0.5">
+            </div>
+
+            <div class="form-group">
+                <label for="buy-fee">Buy Fee (%)</label>
+                <div class="input-wrapper">
+                    <input type="number" id="buy-fee" class="form-control has-suffix"
+                           min="0" max="100" step="0.01" value="0.1">
+                    <span class="input-addon input-addon--suffix">%</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="sell-fee">Sell Fee (%)</label>
+                <div class="input-wrapper">
+                    <input type="number" id="sell-fee" class="form-control has-suffix"
+                           min="0" max="100" step="0.01" value="0.1">
+                    <span class="input-addon input-addon--suffix">%</span>
+                </div>
+            </div>
+        </div>
+
+        <button type="button" class="btn btn-calculate" id="btn-calculate">
+            Calculate Profit
+        </button>
+
+        <div class="calc-results" id="calc-results" hidden>
+            <div class="results-grid">
+                <div class="result-item">
+                    <span class="result-label">Total Invested (with fees)</span>
+                    <span class="result-value" id="r-invested">—</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">Total Received (after fees)</span>
+                    <span class="result-value" id="r-received">—</span>
+                </div>
+                <div class="result-item result-item--highlight">
+                    <span class="result-label">Profit / Loss</span>
+                    <span class="result-value" id="r-profit">—</span>
+                </div>
+                <div class="result-item result-item--highlight">
+                    <span class="result-label">ROI</span>
+                    <span class="result-value" id="r-roi">—</span>
+                </div>
+            </div>
+        </div>
+
+    </form>
+</div>
+{% endblock %}
+
+{% block tool_content %}
+<div class="tool-content">
+    <h2>How to Use the Crypto Profit Calculator</h2>
+    <p>Enter the price at which you bought and sold the cryptocurrency, the number of coins,
+       and any trading fees charged by your exchange. The calculator instantly shows your
+       profit or loss and return on investment (ROI).</p>
+
+    <h2>Understanding Crypto Trading Fees</h2>
+    <p>Crypto exchanges typically charge 0.1%–0.5% per trade (taker/maker fees). On a $10,000
+       trade, a 0.1% fee costs $10. Applied on both entry and exit, fees total $20 — this
+       reduces your net profit directly.</p>
+    <p>Always factor fees into your profit targets. Breaking even on a 0.2% round-trip trade
+       requires your sell price to be at least 0.2% above your buy price.</p>
+
+    <h2>What is ROI in Crypto?</h2>
+    <p>Return on Investment (ROI) = (Net profit ÷ Total cost) × 100. A 100% ROI means you
+       doubled your money. A −50% ROI means you lost half. ROI is the clearest way to compare
+       trades across different sizes and coins.</p>
+</div>
+{% endblock %}
+
+{% block tool_faq %}
+<section class="tool-faq faq-section">
+    <h2>Frequently Asked Questions</h2>
+
+    <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <h3 itemprop="name">How do I calculate crypto profit?</h3>
+        <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+            <p itemprop="text">Profit = (Sell price × Quantity − Sell fee) − (Buy price × Quantity + Buy fee).
+               Enter your numbers above and the calculator does the math instantly.</p>
+        </div>
+    </div>
+
+    <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <h3 itemprop="name">How do crypto trading fees affect profit?</h3>
+        <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+            <p itemprop="text">Fees erode profit on both the buy and the sell side. Even a 0.1% fee
+               on each side of a $10,000 trade costs $20, significantly impacting small moves.</p>
+        </div>
+    </div>
+
+    <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <h3 itemprop="name">What is a good ROI for cryptocurrency?</h3>
+        <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+            <p itemprop="text">Any positive ROI is a gain. Bitcoin has historically averaged
+               100–200% annually over multi-year periods, but past performance is not a guarantee
+               of future results.</p>
+        </div>
+    </div>
+
+    <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <h3 itemprop="name">Do I need to pay taxes on crypto profits?</h3>
+        <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+            <p itemprop="text">In most countries, yes — crypto gains are taxed as capital gains.
+               Use our <a href="/tools/crypto-tax-calculator">Crypto Tax Calculator</a> for an
+               estimate, and always consult a tax professional.</p>
+        </div>
+    </div>
+
+    <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <h3 itemprop="name">Does this calculator work for all cryptocurrencies?</h3>
+        <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+            <p itemprop="text">Yes — the profit/loss calculation is the same regardless of the coin.
+               Just enter the buy and sell prices in USD for Bitcoin, Ethereum, or any altcoin.</p>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block tool_related %}
+<div class="tool-related">
+    <h3>Related Tools</h3>
+    <div class="tool-related-links">
+        <a href="/tools/dca-calculator">DCA Calculator</a>
+        <a href="/tools/investment-calculator/bitcoin">Investment Calculator</a>
+        <a href="/tools/crypto-tax-calculator">Tax Calculator</a>
+        <a href="/tools/mining-calculator">Mining Calculator</a>
+    </div>
+</div>
+{% endblock %}
+
+{% block tool_js %}
+<script>
+(function () {
+  'use strict';
+
+  var btn     = document.getElementById('btn-calculate');
+  var results = document.getElementById('calc-results');
+
+  function fmtUsd(v) {
+    if (!isFinite(v)) return '—';
+    var sign = v < 0 ? '−$' : '$';
+    return sign + Math.abs(v).toLocaleString('en-US', {minimumFractionDigits:2,maximumFractionDigits:2});
+  }
+
+  function fmtPct(v) {
+    if (!isFinite(v)) return '—';
+    return (v >= 0 ? '+' : '') + v.toFixed(2) + '%';
+  }
+
+  function setEl(id, text, value) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = text;
+    el.classList.remove('value-positive','value-negative','value-neutral');
+    if (value > 0) el.classList.add('value-positive');
+    else if (value < 0) el.classList.add('value-negative');
+    else el.classList.add('value-neutral');
+  }
+
+  function calc() {
+    var buyPrice  = parseFloat(document.getElementById('buy-price').value)  || 0;
+    var sellPrice = parseFloat(document.getElementById('sell-price').value) || 0;
+    var qty       = parseFloat(document.getElementById('quantity').value)    || 0;
+    var buyFee    = parseFloat(document.getElementById('buy-fee').value)     || 0;
+    var sellFee   = parseFloat(document.getElementById('sell-fee').value)    || 0;
+
+    if (buyPrice <= 0 || qty <= 0) { results.hidden = true; return; }
+
+    var totalInvested  = buyPrice  * qty;
+    var buyFeeAmt      = totalInvested * (buyFee / 100);
+    var totalCost      = totalInvested + buyFeeAmt;
+
+    var totalRevenue   = sellPrice * qty;
+    var sellFeeAmt     = totalRevenue * (sellFee / 100);
+    var totalReceived  = totalRevenue - sellFeeAmt;
+
+    var profit         = totalReceived - totalCost;
+    var roi            = totalCost > 0 ? (profit / totalCost) * 100 : 0;
+
+    document.getElementById('r-invested').textContent = '$' + totalCost.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+    document.getElementById('r-received').textContent = '$' + totalReceived.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+    setEl('r-profit', fmtUsd(profit),  profit);
+    setEl('r-roi',    fmtPct(roi),     roi);
+
+    results.hidden = false;
+  }
+
+  btn.addEventListener('click', calc);
+  document.getElementById('profit-form').addEventListener('input', calc);
+  calc();
+}());
+</script>
+{% endblock %}

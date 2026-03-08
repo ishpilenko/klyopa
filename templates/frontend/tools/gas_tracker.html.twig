@@ -1,0 +1,238 @@
+{% extends 'frontend/tools/base_tool.html.twig' %}
+
+{% block title %}{{ meta_title }}{% endblock %}
+{% block og_title %}{{ meta_title }}{% endblock %}
+{% block og_description %}{{ meta_description }}{% endblock %}
+
+{% block schema_markup %}
+    {{ schema_breadcrumb(breadcrumbs, app.request.schemeAndHttpHost) }}
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Ethereum Gas Tracker",
+        "applicationCategory": "FinanceApplication",
+        "operatingSystem": "Web",
+        "url": "{{ app.request.schemeAndHttpHost }}/tools/gas-tracker",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+    }
+    </script>
+{% endblock %}
+
+{# Pass initial gas data to JS #}
+{% block critical_css %}
+<script>
+window.GAS_DATA = {{ gas|json_encode(constant('JSON_UNESCAPED_UNICODE'))|raw }};
+</script>
+{% endblock %}
+
+{% block tool_title %}Ethereum Gas Tracker — Current Gas Fees{% endblock %}
+
+{% block tool_intro %}
+    <p>Live Ethereum network gas prices. Updated every 15 seconds.</p>
+{% endblock %}
+
+{% block tool_widget %}
+<div style="max-width:720px">
+
+    {# ── Gas speed cards ── #}
+    <div class="gas-cards">
+        <div class="gas-card gas-card--slow">
+            <div class="gas-card-label">🐢 Slow</div>
+            <div class="gas-card-gwei" id="gas-slow">{{ gas.slow|number_format(0) }}</div>
+            <div class="gas-card-sub">Gwei</div>
+            <div class="gas-card-sub" id="gas-slow-usd">
+                ~${{ ((gas.slow * 21000 * 1e-9) * gas.ethPrice)|number_format(4) }} transfer
+            </div>
+        </div>
+        <div class="gas-card gas-card--medium">
+            <div class="gas-card-label">🚶 Average</div>
+            <div class="gas-card-gwei" id="gas-avg">{{ gas.average|number_format(0) }}</div>
+            <div class="gas-card-sub">Gwei</div>
+            <div class="gas-card-sub" id="gas-avg-usd">
+                ~${{ ((gas.average * 21000 * 1e-9) * gas.ethPrice)|number_format(4) }} transfer
+            </div>
+        </div>
+        <div class="gas-card gas-card--fast">
+            <div class="gas-card-label">🚀 Fast</div>
+            <div class="gas-card-gwei" id="gas-fast">{{ gas.fast|number_format(0) }}</div>
+            <div class="gas-card-sub">Gwei</div>
+            <div class="gas-card-sub" id="gas-fast-usd">
+                ~${{ ((gas.fast * 21000 * 1e-9) * gas.ethPrice)|number_format(4) }} transfer
+            </div>
+        </div>
+    </div>
+
+    <p class="gas-updated">
+        ETH price: <strong>${{ gas.ethPrice|number_format(2) }}</strong>
+        &ensp;·&ensp;
+        <span id="gas-updated-time">Updated just now</span>
+        {% if gas.fallback %}
+            &ensp;·&ensp; <span style="color:var(--color-accent)">⚠ Showing estimated values</span>
+        {% endif %}
+    </p>
+
+    {# ── Transaction cost table ── #}
+    <h3 style="font-size:1rem;margin-bottom:.75rem">Estimated Transaction Costs</h3>
+    <table class="gas-tx-table">
+        <thead>
+            <tr>
+                <th>Transaction Type</th>
+                <th>Gas Units</th>
+                <th>Slow</th>
+                <th>Average</th>
+                <th>Fast</th>
+            </tr>
+        </thead>
+        <tbody id="gas-tx-body">
+            {% for tx in gas.transactions %}
+            <tr>
+                <td>{{ tx.label }}</td>
+                <td>{{ tx.gasUnits|number_format }}</td>
+                <td>${{ tx.slow|number_format(4) }}</td>
+                <td>${{ tx.average|number_format(4) }}</td>
+                <td>${{ tx.fast|number_format(4) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block tool_content %}
+<div class="tool-content">
+    <h2>What is Gas in Ethereum?</h2>
+    <p>Gas is the fee paid to Ethereum network validators (formerly miners) to process your
+       transaction. It is measured in <strong>Gwei</strong> (1 Gwei = 0.000000001 ETH).
+       The total fee you pay = Gas price (Gwei) × Gas units required by the transaction type.</p>
+
+    <p>Simple ETH transfers cost 21,000 gas units. More complex operations like Uniswap swaps or
+       NFT mints require 100,000–500,000+ gas units because they execute smart contract code.</p>
+
+    <h2>Why Do Gas Prices Fluctuate?</h2>
+    <p>Gas prices follow supply and demand. When many people want to transact simultaneously
+       (during NFT mints, DeFi launches, or market crashes), demand for block space spikes and
+       fees increase. On quiet weekends or low-activity periods, gas drops to single-digit Gwei.</p>
+
+    <h2>How to Save on Gas Fees</h2>
+    <p>Transact during off-peak hours (evenings and weekends UTC). Use Layer 2 networks like
+       Arbitrum, Optimism, or Base for DeFi activity — fees are 10–100× cheaper. For simple
+       transfers, choose the "Slow" option when you're not in a hurry.</p>
+</div>
+{% endblock %}
+
+{% block tool_faq %}
+<section class="tool-faq faq-section">
+    <h2>Frequently Asked Questions</h2>
+
+    <div class="faq-item">
+        <h3>What is the cheapest time to send Ethereum?</h3>
+        <p>Gas is typically cheapest between 00:00–08:00 UTC (midnight to 8 AM) and on weekends.
+           Major market events, NFT launches, and DeFi protocol updates cause sudden spikes.</p>
+    </div>
+
+    <div class="faq-item">
+        <h3>What is Gwei?</h3>
+        <p>Gwei is a denomination of ETH. 1 Gwei = 0.000000001 ETH (10⁻⁹ ETH). Gas prices are
+           quoted in Gwei for readability — saying "10 Gwei" is much clearer than "0.00000001 ETH".</p>
+    </div>
+
+    <div class="faq-item">
+        <h3>Why is my Uniswap swap so expensive?</h3>
+        <p>Uniswap swaps require ~150,000 gas units (vs. 21,000 for a simple transfer) because
+           they execute smart contract code. At 10 Gwei and $3,000 ETH price, a Uniswap swap
+           costs about $4.50.</p>
+    </div>
+
+    <div class="faq-item">
+        <h3>What happens if I set gas too low?</h3>
+        <p>Your transaction will be stuck in the mempool until either gas prices drop to your level
+           or you cancel/speed up the transaction. Use "average" or higher for time-sensitive transactions.</p>
+    </div>
+
+    <div class="faq-item">
+        <h3>Do Layer 2 networks have the same gas fees?</h3>
+        <p>No — Layer 2 networks like Arbitrum, Optimism, and Base have dramatically lower fees,
+           often under $0.01 per transaction. They batch transactions and post them to Ethereum
+           in bulk, sharing the cost.</p>
+    </div>
+</section>
+{% endblock %}
+
+{% block tool_related %}
+<div class="tool-related">
+    <h3>Related Tools</h3>
+    <div class="tool-related-links">
+        <a href="/convert/eth-to-usd">ETH to USD Converter</a>
+        <a href="/price/ethereum">Ethereum Price</a>
+        <a href="/tools/crypto-profit-calculator">Profit/Loss Calculator</a>
+        <a href="/tools/crypto-tax-calculator">Tax Calculator</a>
+    </div>
+</div>
+{% endblock %}
+
+{% block tool_js %}
+<script>
+(function () {
+  'use strict';
+
+  var REFRESH_INTERVAL = 15000; // 15 seconds
+  var lastUpdated = Date.now();
+
+  function fmtUsd(v) {
+    if (!isFinite(v)) return '—';
+    return '$' + v.toLocaleString('en-US',{minimumFractionDigits:4,maximumFractionDigits:4});
+  }
+
+  function updateCards(data) {
+    document.getElementById('gas-slow').textContent  = Math.round(data.slow);
+    document.getElementById('gas-avg').textContent   = Math.round(data.average);
+    document.getElementById('gas-fast').textContent  = Math.round(data.fast);
+
+    var ep = data.ethPrice || 0;
+    document.getElementById('gas-slow-usd').textContent = '~' + fmtUsd(data.slow    * 21000 * 1e-9 * ep) + ' transfer';
+    document.getElementById('gas-avg-usd').textContent  = '~' + fmtUsd(data.average * 21000 * 1e-9 * ep) + ' transfer';
+    document.getElementById('gas-fast-usd').textContent = '~' + fmtUsd(data.fast    * 21000 * 1e-9 * ep) + ' transfer';
+
+    if (data.transactions && data.transactions.length) {
+      var tbody = document.getElementById('gas-tx-body');
+      tbody.innerHTML = data.transactions.map(function(tx) {
+        return '<tr>'
+          + '<td>' + tx.label + '</td>'
+          + '<td>' + tx.gasUnits.toLocaleString() + '</td>'
+          + '<td>' + fmtUsd(tx.slow)    + '</td>'
+          + '<td>' + fmtUsd(tx.average) + '</td>'
+          + '<td>' + fmtUsd(tx.fast)    + '</td>'
+          + '</tr>';
+      }).join('');
+    }
+
+    lastUpdated = Date.now();
+  }
+
+  function updateTimestamp() {
+    var sec = Math.round((Date.now() - lastUpdated) / 1000);
+    var txt = sec < 5 ? 'Updated just now'
+            : sec < 60 ? 'Updated ' + sec + 's ago'
+            : 'Updated ' + Math.round(sec / 60) + 'm ago';
+    var el = document.getElementById('gas-updated-time');
+    if (el) el.textContent = txt;
+  }
+
+  function refresh() {
+    fetch('/api/v1/gas-prices?network=ethereum')
+      .then(function(r){ return r.json(); })
+      .then(function(data){ if (data && data.slow) updateCards(data); })
+      .catch(function(){});
+  }
+
+  // Apply initial data from server
+  if (window.GAS_DATA) { updateCards(window.GAS_DATA); }
+
+  // Auto-refresh every 15 seconds
+  setInterval(refresh, REFRESH_INTERVAL);
+  // Update timestamp display every second
+  setInterval(updateTimestamp, 1000);
+}());
+</script>
+{% endblock %}

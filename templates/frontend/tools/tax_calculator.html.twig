@@ -1,0 +1,387 @@
+{% extends 'frontend/tools/base_tool.html.twig' %}
+
+{% block title %}{{ meta_title }}{% endblock %}
+{% block og_title %}{{ meta_title }}{% endblock %}
+{% block og_description %}{{ meta_description }}{% endblock %}
+
+{% block schema_markup %}
+    {{ schema_breadcrumb(breadcrumbs, app.request.schemeAndHttpHost) }}
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Crypto Tax Calculator",
+        "applicationCategory": "FinanceApplication",
+        "operatingSystem": "Web",
+        "url": "{{ app.request.schemeAndHttpHost }}/tools/crypto-tax-calculator",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+            {
+                "@type": "Question",
+                "name": "Do you pay tax on crypto gains?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "In most countries, yes. The US, UK, Germany, and Australia all tax cryptocurrency capital gains. The rate depends on your income and how long you held the asset."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "How much tax do I pay on crypto in the US?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Short-term crypto gains (held under 1 year) are taxed as ordinary income at 10%–37%. Long-term gains (held over 1 year) are taxed at 0%, 15%, or 20% depending on your total income."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Is crypto tax-free in Germany?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Yes — in Germany, if you hold cryptocurrency for more than 1 year before selling, the gains are completely tax-free. Gains on holdings sold within 1 year are taxed as ordinary income."
+                }
+            }
+        ]
+    }
+    </script>
+{% endblock %}
+
+{% block tool_title %}Crypto Tax Calculator — Estimate Your Crypto Taxes{% endblock %}
+
+{% block tool_intro %}
+    <p>Estimate your cryptocurrency capital gains tax for 2026.
+       Supports US, UK, Germany, and Australia tax rules.</p>
+{% endblock %}
+
+{% block tool_widget %}
+<div class="calc-widget" style="max-width:600px">
+
+    <div class="tax-disclaimer">
+        <strong>⚠ Disclaimer:</strong> This calculator provides <strong>estimates only</strong>.
+        Tax laws vary by jurisdiction and individual circumstances.
+        Always consult a qualified tax professional before filing.
+    </div>
+
+    <form id="tax-form" novalidate>
+        <div class="tool-fields">
+
+            <div class="form-group">
+                <label for="t-country">Country</label>
+                <select id="t-country" class="form-control">
+                    <option value="US" selected>🇺🇸 United States</option>
+                    <option value="UK">🇬🇧 United Kingdom</option>
+                    <option value="DE">🇩🇪 Germany</option>
+                    <option value="AU">🇦🇺 Australia</option>
+                </select>
+            </div>
+
+            <div class="form-group" id="filing-group">
+                <label for="t-filing">Filing Status</label>
+                <select id="t-filing" class="form-control">
+                    <option value="single" selected>Single</option>
+                    <option value="married">Married Filing Jointly</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="t-income">Annual Income (excl. crypto gains)</label>
+                <div class="input-wrapper">
+                    <span class="input-addon input-addon--prefix">$</span>
+                    <input type="number" id="t-income" class="form-control has-prefix"
+                           value="75000" min="0" step="1000">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="t-gains">Crypto Gains This Year</label>
+                <div class="input-wrapper">
+                    <span class="input-addon input-addon--prefix">$</span>
+                    <input type="number" id="t-gains" class="form-control has-prefix"
+                           value="10000" min="0" step="100">
+                </div>
+            </div>
+
+            <div class="form-group full">
+                <label for="t-period">Holding Period</label>
+                <select id="t-period" class="form-control">
+                    <option value="short">Short-term (held &lt; 1 year)</option>
+                    <option value="long" selected>Long-term (held &gt; 1 year)</option>
+                </select>
+            </div>
+        </div>
+
+        <button type="button" class="btn btn-calculate" id="btn-tax">
+            Estimate My Tax
+        </button>
+    </form>
+
+    <div class="calc-results" id="tax-results" hidden>
+        <div class="results-grid">
+            <div class="result-item">
+                <span class="result-label">Applicable Tax Rate</span>
+                <span class="result-value" id="r-rate">—</span>
+            </div>
+            <div class="result-item result-item--highlight">
+                <span class="result-label">Estimated Tax Owed</span>
+                <span class="result-value" id="r-tax">—</span>
+            </div>
+            <div class="result-item">
+                <span class="result-label">After-Tax Profit</span>
+                <span class="result-value" id="r-net">—</span>
+            </div>
+        </div>
+        <p id="r-note" style="font-size:.875rem;color:var(--color-text-muted);margin-top:.875rem"></p>
+    </div>
+</div>
+{% endblock %}
+
+{% block tool_content %}
+<div class="tool-content">
+    <h2>Crypto Tax Guide by Country</h2>
+
+    <div class="country-guide-tabs">
+        <button type="button" class="country-tab active" onclick="showCountry('us', this)">🇺🇸 US</button>
+        <button type="button" class="country-tab" onclick="showCountry('uk', this)">🇬🇧 UK</button>
+        <button type="button" class="country-tab" onclick="showCountry('de', this)">🇩🇪 Germany</button>
+        <button type="button" class="country-tab" onclick="showCountry('au', this)">🇦🇺 Australia</button>
+    </div>
+
+    <div id="guide-us" class="country-content active">
+        <p><strong>IRS rules (United States):</strong> The IRS treats cryptocurrency as property.
+           Every sale, exchange, or spend is a taxable event. Short-term gains (held &lt; 1 year) are
+           taxed as ordinary income at rates from 10% to 37%. Long-term gains (held ≥ 1 year) are taxed
+           at 0%, 15%, or 20% based on your total taxable income.</p>
+        <p>Crypto-to-crypto swaps are also taxable. Mining income is taxed as ordinary income at
+           the fair market value when received.</p>
+    </div>
+
+    <div id="guide-uk" class="country-content">
+        <p><strong>HMRC rules (United Kingdom):</strong> Crypto is treated as a capital asset.
+           The Capital Gains Tax annual allowance is £3,000 (2024/25). Gains above this are taxed
+           at 10% (basic rate) or 20% (higher rate) for most assets. Basic rate taxpayers pay 18%
+           on residential property but 10% on crypto.</p>
+        <p>Trading crypto as a business incurs Income Tax rather than CGT.</p>
+    </div>
+
+    <div id="guide-de" class="country-content">
+        <p><strong>German rules (Finanzamt):</strong> Germany has one of the most favourable crypto
+           tax regimes. If you hold cryptocurrency for more than <strong>1 year</strong>, all gains are
+           completely <strong>tax-free</strong> regardless of profit amount.</p>
+        <p>For holdings sold within 1 year, gains are treated as "miscellaneous income" and taxed
+           at your personal income tax rate (up to 45% + solidarity surcharge). The first €600 of
+           short-term gains is exempt.</p>
+    </div>
+
+    <div id="guide-au" class="country-content">
+        <p><strong>ATO rules (Australia):</strong> The ATO treats crypto as property. Short-term gains
+           (held &lt; 12 months) are taxed as ordinary income at your marginal rate. Long-term gains
+           (held ≥ 12 months) receive a <strong>50% CGT discount</strong> — you only pay tax on half
+           the gain.</p>
+        <p>Australian marginal income tax rates range from 0% (up to A$18,200) to 45% (over A$180,000).
+           A 2% Medicare Levy also applies to most taxpayers.</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block tool_faq %}
+<section class="tool-faq faq-section">
+    <h2>Frequently Asked Questions</h2>
+
+    <div class="faq-item">
+        <h3>Do you pay tax on crypto gains?</h3>
+        <p>In most countries, yes. The US, UK, Germany, and Australia all tax cryptocurrency capital
+           gains. The specific rate depends on your income, holding period, and country.</p>
+    </div>
+
+    <div class="faq-item">
+        <h3>How much tax do I pay on crypto in the US?</h3>
+        <p>Short-term gains (held under 1 year) are taxed as ordinary income at 10%–37%.
+           Long-term gains (held over 1 year) are taxed at 0%, 15%, or 20% depending on total income.</p>
+    </div>
+
+    <div class="faq-item">
+        <h3>Is crypto tax-free in Germany?</h3>
+        <p>Yes — if you hold cryptocurrency for more than 1 year before selling, gains are completely
+           tax-free in Germany. Gains on shorter-term holdings are taxed as ordinary income.</p>
+    </div>
+
+    <div class="faq-item">
+        <h3>Is crypto-to-crypto taxable?</h3>
+        <p>In the US and Australia, yes — exchanging one cryptocurrency for another is a taxable disposal
+           event. In Germany, only if held under 1 year. Consult your local tax authority for specifics.</p>
+    </div>
+
+    <div class="faq-item">
+        <h3>How do I reduce my crypto tax bill?</h3>
+        <p>Hold assets for more than 1 year to qualify for lower long-term rates (or full exemption in
+           Germany). Use tax-loss harvesting to offset gains with losses. Consider DCA strategies that
+           spread purchase dates. Always consult a crypto tax specialist.</p>
+    </div>
+</section>
+{% endblock %}
+
+{% block tool_related %}
+<div class="tool-related">
+    <h3>Related Tools</h3>
+    <div class="tool-related-links">
+        <a href="/tools/crypto-profit-calculator">Profit/Loss Calculator</a>
+        <a href="/tools/dca-calculator">DCA Calculator</a>
+        <a href="/tools/investment-calculator/bitcoin">Investment Calculator</a>
+        <a href="/tools/mining-calculator">Mining Calculator</a>
+    </div>
+</div>
+{% endblock %}
+
+{% block tool_js %}
+<script>
+(function () {
+  'use strict';
+
+  // Tax brackets (2026 approximate — verify annually)
+  var TAX = {
+    US: {
+      short: {
+        single: [
+          {min:0,       max:11925,   rate:10},
+          {min:11925,   max:48475,   rate:12},
+          {min:48475,   max:103350,  rate:22},
+          {min:103350,  max:197300,  rate:24},
+          {min:197300,  max:250525,  rate:32},
+          {min:250525,  max:626350,  rate:35},
+          {min:626350,  max:Infinity,rate:37},
+        ],
+        married: [
+          {min:0,       max:23850,   rate:10},
+          {min:23850,   max:96950,   rate:12},
+          {min:96950,   max:206700,  rate:22},
+          {min:206700,  max:394600,  rate:24},
+          {min:394600,  max:501050,  rate:32},
+          {min:501050,  max:751600,  rate:35},
+          {min:751600,  max:Infinity,rate:37},
+        ]
+      },
+      long: {
+        single: [
+          {min:0,       max:48350,   rate:0},
+          {min:48350,   max:533400,  rate:15},
+          {min:533400,  max:Infinity,rate:20},
+        ],
+        married: [
+          {min:0,       max:96700,   rate:0},
+          {min:96700,   max:600050,  rate:15},
+          {min:600050,  max:Infinity,rate:20},
+        ]
+      }
+    }
+  };
+
+  function getBracketRate(brackets, income) {
+    for (var i = 0; i < brackets.length; i++) {
+      if (income >= brackets[i].min && income < brackets[i].max) return brackets[i].rate;
+    }
+    return brackets[brackets.length - 1].rate;
+  }
+
+  function calcTax(country, filing, income, gains, period) {
+    var effectiveRate = 0;
+    var note = '';
+
+    if (country === 'US') {
+      var brackets = TAX.US[period === 'long' ? 'long' : 'short'][filing] || TAX.US.short.single;
+      effectiveRate = getBracketRate(brackets, income + gains);
+      note = period === 'long'
+        ? 'US long-term capital gains rate based on total taxable income.'
+        : 'US short-term rate = ordinary income bracket for gains added on top of regular income.';
+
+    } else if (country === 'UK') {
+      if (period === 'long' || period === 'short') {
+        var combined = income + gains;
+        // Basic rate threshold ~£50,270; above = higher rate
+        effectiveRate = combined > 50270 ? 20 : 10;
+        var annualAllowance = 3000;
+        if (gains <= annualAllowance) { effectiveRate = 0; }
+        note = 'UK CGT: 10% basic rate / 20% higher rate. Annual allowance £3,000.';
+      }
+
+    } else if (country === 'DE') {
+      if (period === 'long') {
+        effectiveRate = 0;
+        note = 'Germany: holdings over 1 year are completely tax-free (Spekulationsfrist).';
+      } else {
+        // Approximate German income tax rate
+        if (income < 11604) effectiveRate = 0;
+        else if (income < 66761) effectiveRate = Math.min(42, 14 + ((income - 11604) / 55157) * 28);
+        else effectiveRate = 42;
+        note = 'Germany: short-term gains taxed as income. First €600 of gains is exempt.';
+        if (gains <= 600) effectiveRate = 0;
+      }
+
+    } else if (country === 'AU') {
+      // Australian marginal rates (AUD approximated as USD for simplicity)
+      var auBrackets = [
+        {min:0, max:18200, rate:0}, {min:18200, max:45000, rate:19},
+        {min:45000, max:120000, rate:32.5}, {min:120000, max:180000, rate:37},
+        {min:180000, max:Infinity, rate:45},
+      ];
+      var auGains = period === 'long' ? gains * 0.5 : gains; // 50% CGT discount
+      effectiveRate = getBracketRate(auBrackets, income + auGains);
+      if (period === 'long') {
+        note = 'Australia: 50% CGT discount applied for assets held ≥ 12 months. +2% Medicare Levy not included.';
+      } else {
+        note = 'Australia: full marginal income tax rate. +2% Medicare Levy not included.';
+      }
+    }
+
+    return { rate: effectiveRate, note: note };
+  }
+
+  function fmtUsd(v) {
+    return '$' + Math.abs(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  }
+
+  function calculate() {
+    var country = document.getElementById('t-country').value;
+    var filing  = document.getElementById('t-filing').value;
+    var income  = parseFloat(document.getElementById('t-income').value) || 0;
+    var gains   = parseFloat(document.getElementById('t-gains').value)  || 0;
+    var period  = document.getElementById('t-period').value;
+
+    if (gains <= 0) { document.getElementById('tax-results').hidden = true; return; }
+
+    var result = calcTax(country, filing, income, gains, period);
+    var taxAmt = (result.rate / 100) * gains;
+    var netProfit = gains - taxAmt;
+
+    document.getElementById('r-rate').textContent = result.rate.toFixed(1) + '%';
+    document.getElementById('r-tax').textContent  = fmtUsd(taxAmt);
+    document.getElementById('r-net').textContent  = fmtUsd(netProfit);
+    document.getElementById('r-note').textContent = result.note;
+
+    document.getElementById('tax-results').hidden = false;
+  }
+
+  // Show/hide filing status (US only)
+  document.getElementById('t-country').addEventListener('change', function() {
+    document.getElementById('filing-group').style.display = this.value === 'US' ? '' : 'none';
+    calculate();
+  });
+
+  document.getElementById('btn-tax').addEventListener('click', calculate);
+  document.getElementById('tax-form').addEventListener('input', CalcHelpers.debounce(calculate, 300));
+  calculate();
+
+  window.showCountry = function(id, btn) {
+    document.querySelectorAll('.country-content').forEach(function(el){ el.classList.remove('active'); });
+    document.querySelectorAll('.country-tab').forEach(function(el){ el.classList.remove('active'); });
+    var el = document.getElementById('guide-' + id);
+    if (el) el.classList.add('active');
+    if (btn) btn.classList.add('active');
+  };
+}());
+</script>
+{% endblock %}
