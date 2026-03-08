@@ -47,7 +47,7 @@
     {% block preconnect %}{% endblock %}
 
     {# ── Dark mode: inline script to prevent FOUC (must be before CSS) ── #}
-    <script>(function(){var m=document.cookie.match(/theme=(light|dark)/);var t=m?m[1]:(window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');document.documentElement.setAttribute('data-theme',t);})();</script>
+    <script>(function(){var t=localStorage.getItem('theme')||(document.cookie.match(/theme=(light|dark)/)||[])[1]||(window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');document.documentElement.setAttribute('data-theme',t);})();</script>
 
     {# ── Critical CSS (inline for above-the-fold) ──────────── #}
     {% block critical_css %}{% endblock %}

@@ -270,6 +270,12 @@ body { display: flex; flex-direction: column; min-height: 100vh; }
 .breadcrumb li:last-child::after { display: none; }
 .breadcrumb a { color: var(--color-primary); }
 
+/* Breadcrumb on coloured hero backgrounds — override with white */
+.page-hero .breadcrumb { color: rgba(255,255,255,.7); }
+.page-hero .breadcrumb a { color: #fff; }
+.page-hero .breadcrumb a:hover { opacity: .8; }
+.page-hero .breadcrumb li::after { color: rgba(255,255,255,.45); }
+
 /* --- Article Card --- */
 .article-card {
     background: var(--color-surface);
