@@ -1,0 +1,53 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ meta_title }}{% endblock %}
+
+{% block body %}
+
+<div class="container">
+    <div class="layout">
+
+        <div>
+            <nav class="breadcrumb" aria-label="Breadcrumb">
+                <a href="/">Home</a>
+                <span>›</span>
+                <span>Comparisons</span>
+            </nav>
+
+            <div class="page-header">
+                <h1>Crypto Comparisons</h1>
+                <p class="page-intro">Side-by-side comparisons of top cryptocurrencies, exchanges, and wallets.</p>
+            </div>
+
+            {% if articles is not empty %}
+                <div class="article-grid">
+                    {% for article in articles %}
+                        {{ include('components/article_card.html.twig', {article: article}) }}
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <h3>Comparisons coming soon</h3>
+                    <p>We're preparing in-depth comparisons. Check back soon.</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <aside class="sidebar">
+            <div class="sidebar-widget">
+                <h3>Popular Comparisons</h3>
+                <ul class="sidebar-links">
+                    <li><a href="/compare/bitcoin-vs-ethereum">Bitcoin vs Ethereum</a></li>
+                    <li><a href="/compare/ethereum-vs-solana">Ethereum vs Solana</a></li>
+                    <li><a href="/compare/bitcoin-vs-gold">Bitcoin vs Gold</a></li>
+                    <li><a href="/compare/coinbase-vs-binance">Coinbase vs Binance</a></li>
+                    <li><a href="/compare/ledger-vs-trezor">Ledger vs Trezor</a></li>
+                </ul>
+            </div>
+            {{ include('components/sidebar.html.twig', {categories: categories}) }}
+        </aside>
+
+    </div>
+</div>
+
+{% endblock %}

@@ -7,6 +7,7 @@ namespace App\Controller\Frontend;
 use App\Repository\ArticleRepository;
 use App\Repository\CategoryRepository;
 use App\Repository\CoinPageRepository;
+use App\Repository\GlossaryTermRepository;
 use App\Repository\ToolRepository;
 use App\Service\CoinGecko\CoinGeckoClient;
 use App\Service\SiteContext;
@@ -25,6 +26,7 @@ class SitemapController extends AbstractController
         private readonly CategoryRepository $categoryRepository,
         private readonly ToolRepository $toolRepository,
         private readonly CoinPageRepository $coinPageRepository,
+        private readonly GlossaryTermRepository $glossaryTermRepository,
         private readonly CoinGeckoClient $coinGecko,
     ) {
     }
@@ -110,6 +112,20 @@ class SitemapController extends AbstractController
         return $this->xmlResponse('sitemap/prices.xml.twig', [
             'base_url' => $baseUrl,
             'coins'    => $coins,
+        ]);
+    }
+
+    /** Glossary sitemap */
+    #[Route('/sitemap-glossary.xml', name: 'app_sitemap_glossary', methods: ['GET'])]
+    public function glossary(): Response
+    {
+        $site    = $this->siteContext->getSite();
+        $baseUrl = 'https://' . $site->getDomain();
+        $terms   = $this->glossaryTermRepository->findForSitemap();
+
+        return $this->xmlResponse('sitemap/glossary.xml.twig', [
+            'base_url' => $baseUrl,
+            'terms'    => $terms,
         ]);
     }
 

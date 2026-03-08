@@ -79,6 +79,29 @@ class PublicPagesTest extends WebTestCase
         // Investment calculator
         yield 'crypto: investment calculator'       => [$c, '/tools/investment-calculator/bitcoin'];
 
+        // Glossary
+        yield 'crypto: glossary index'              => [$c, '/glossary'];
+        yield 'crypto: glossary term blockchain'    => [$c, '/glossary/blockchain'];
+        yield 'crypto: glossary term bitcoin'       => [$c, '/glossary/bitcoin'];
+        yield 'crypto: glossary term defi'          => [$c, '/glossary/defi'];
+        yield 'crypto: glossary term hodl'          => [$c, '/glossary/hodl'];
+        yield 'crypto: glossary 404'                => [$c, '/glossary/this-term-does-not-exist-xyz', 404];
+
+        // Fear & Greed Index
+        yield 'crypto: fear-greed-index'            => [$c, '/fear-greed-index'];
+
+        // Exchanges listing
+        yield 'crypto: reviews exchanges'           => [$c, '/reviews/exchanges'];
+        yield 'crypto: reviews wallets'             => [$c, '/reviews/wallets'];
+
+        // Compare
+        yield 'crypto: compare index'               => [$c, '/compare'];
+
+        // Affiliate redirect
+        yield 'crypto: affiliate binance'           => [$c, '/go/binance', 302];
+        yield 'crypto: affiliate coinbase'          => [$c, '/go/coinbase', 302];
+        yield 'crypto: affiliate 404'               => [$c, '/go/this-partner-does-not-exist', 404];
+
         // Sitemaps & robots
         yield 'crypto: sitemap index'               => [$c, '/sitemap.xml'];
         yield 'crypto: sitemap articles page 1'     => [$c, '/sitemap-articles-1.xml'];
@@ -86,6 +109,7 @@ class PublicPagesTest extends WebTestCase
         yield 'crypto: sitemap tools'               => [$c, '/sitemap-tools.xml'];
         yield 'crypto: sitemap prices'              => [$c, '/sitemap-prices.xml'];
         yield 'crypto: sitemap converter'           => [$c, '/sitemap-converter.xml'];
+        yield 'crypto: sitemap glossary'            => [$c, '/sitemap-glossary.xml'];
         yield 'crypto: robots.txt'                  => [$c, '/robots.txt'];
 
         // Generic 404

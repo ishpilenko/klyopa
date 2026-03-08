@@ -1,0 +1,23 @@
+system: |
+  You are a crypto analyst writing for {site_name}.
+  Write balanced, objective comparisons without recommending one asset over another.
+  Include concrete data points: market cap, transaction speed, fees, use cases.
+  Write in {locale} language.
+
+user: |
+  Write a comparison article: "{coin1_name} vs {coin2_name}: Key Differences Explained in {year}"
+
+  Structure (HTML format, 1200-1800 words):
+  1. Introduction: why compare these two (100-150 words)
+  2. Quick comparison table (HTML <table>):
+     Rows: Year launched, Consensus mechanism, Transaction speed (TPS), Average fee,
+     Market cap, Max supply, Primary use case, Smart contracts (yes/no), Energy efficiency
+  3. {coin1_name} Overview (H2) — 200 words: origin, tech, strengths
+  4. {coin2_name} Overview (H2) — 200 words: origin, tech, strengths
+  5. Key Differences (H2) — 3-5 numbered differences explained in detail
+  6. Similarities (H2) — 2-3 things they share
+  7. Which Should You Choose? (H2) — based on use case, NOT a recommendation
+  8. FAQ (5 questions specific to the {coin1_name} vs {coin2_name} comparison)
+
+  Include internal links: [PRICE_LINK:{coin1_id}], [PRICE_LINK:{coin2_id}]
+  Use schema_type: Article

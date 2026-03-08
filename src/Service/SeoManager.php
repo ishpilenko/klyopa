@@ -6,6 +6,7 @@ namespace App\Service;
 
 use App\Entity\Article;
 use App\Entity\Category;
+use App\Entity\GlossaryTerm;
 use App\Entity\Site;
 use App\Entity\Tool;
 
@@ -48,6 +49,17 @@ class SeoManager
             'meta_title' => $tool->getMetaTitle()
                 ?: $tool->getName() . ' — ' . $site->getName(),
             'meta_description' => $tool->getMetaDescription() ?: $tool->getDescription(),
+        ];
+    }
+
+    /** @return array{meta_title: string, meta_description: string|null} */
+    public function forGlossaryTerm(GlossaryTerm $term, Site $site): array
+    {
+        return [
+            'meta_title' => $term->getMetaTitle()
+                ?: 'What is ' . $term->getTerm() . '? Definition & Explanation | ' . $site->getName(),
+            'meta_description' => $term->getMetaDescription()
+                ?: $term->getShortDefinition() . ' Learn more in our crypto glossary.',
         ];
     }
 

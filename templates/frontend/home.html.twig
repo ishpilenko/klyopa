@@ -72,6 +72,20 @@
                         <span>Live Bitcoin price converter</span>
                     </div>
                 </a>
+                <a href="/fear-greed-index" class="home-tool-card">
+                    <span class="home-tool-icon">📊</span>
+                    <div>
+                        <strong>Fear & Greed Index</strong>
+                        <span>{% if fear_greed %}{{ fear_greed.value }} — {{ fear_greed.classification }}{% else %}Market sentiment{% endif %}</span>
+                    </div>
+                </a>
+                <a href="/glossary" class="home-tool-card">
+                    <span class="home-tool-icon">📖</span>
+                    <div>
+                        <strong>Crypto Glossary</strong>
+                        <span>{% if glossary_count > 0 %}{{ glossary_count }} terms explained{% else %}Crypto terms A–Z{% endif %}</span>
+                    </div>
+                </a>
             </div>
         </div>
     {% endif %}
@@ -107,11 +121,23 @@
                         <h3>Crypto Tools</h3>
                         <ul class="sidebar-links">
                             <li><a href="/prices">Live Crypto Prices</a></li>
+                            <li><a href="/fear-greed-index">Fear & Greed Index{% if fear_greed %} — {{ fear_greed.value }}{% endif %}</a></li>
                             <li><a href="/tools/converter">Crypto Converter</a></li>
-                            <li><a href="/convert/btc-to-usd">BTC to USD</a></li>
-                            <li><a href="/convert/eth-to-usd">ETH to USD</a></li>
-                            <li><a href="/convert/btc-to-eth">BTC to ETH</a></li>
+                            <li><a href="/tools/crypto-profit-calculator">Profit Calculator</a></li>
+                            <li><a href="/tools/dca-calculator">DCA Calculator</a></li>
+                            <li><a href="/tools/gas-tracker">Gas Tracker</a></li>
                             <li><a href="/tools/investment-calculator/bitcoin">Investment Calculator</a></li>
+                        </ul>
+                    </div>
+                    <div class="sidebar-widget">
+                        <h3>Learn Crypto</h3>
+                        <ul class="sidebar-links">
+                            <li><a href="/glossary">Crypto Glossary</a></li>
+                            <li><a href="/glossary/blockchain">What is Blockchain?</a></li>
+                            <li><a href="/glossary/defi">What is DeFi?</a></li>
+                            <li><a href="/glossary/staking">What is Staking?</a></li>
+                            <li><a href="/reviews/exchanges">Exchange Reviews</a></li>
+                            <li><a href="/compare">Crypto Comparisons</a></li>
                         </ul>
                     </div>
                 {% endif %}

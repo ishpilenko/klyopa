@@ -1,0 +1,86 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ meta_title }}{% endblock %}
+
+{% block body %}
+
+<div class="container">
+    <div class="layout">
+
+        <div>
+            <nav class="breadcrumb" aria-label="Breadcrumb">
+                <a href="/">Home</a>
+                <span>›</span>
+                <a href="/reviews/exchanges">Reviews</a>
+                <span>›</span>
+                <span>{{ type|capitalize }}</span>
+            </nav>
+
+            <div class="page-header">
+                <h1>Best Crypto {{ type|capitalize|replace({'exchanges': 'Exchanges', 'wallets': 'Wallets'}) }} — {{ 'now'|date('Y') }}</h1>
+                <p class="page-intro">{{ meta_description }}</p>
+            </div>
+
+            {# ── Tabs: Exchanges / Wallets #}
+            <div class="review-tabs">
+                <a href="/reviews/exchanges" class="review-tab {{ type == 'exchanges' ? 'active' : '' }}">Exchanges</a>
+                <a href="/reviews/wallets"   class="review-tab {{ type == 'wallets'   ? 'active' : '' }}">Wallets</a>
+            </div>
+
+            {% if exchanges is not empty %}
+                <div class="exchange-grid">
+                    {% for exchange in exchanges %}
+                        <a href="/reviews/{{ exchange.slug }}-review" class="exchange-card">
+                            <div class="exchange-card-header">
+                                <strong class="exchange-name">{{ exchange.name }}</strong>
+                                {% if exchange.rating %}
+                                    <span class="exchange-rating">★ {{ exchange.rating|number_format(1) }}</span>
+                                {% endif %}
+                            </div>
+                            <div class="exchange-card-meta">
+                                {% if exchange.foundedYear %}
+                                    <span>Founded {{ exchange.foundedYear }}</span>
+                                {% endif %}
+                                {% if exchange.supportedCoins %}
+                                    <span>{{ exchange.supportedCoins }}+ coins</span>
+                                {% endif %}
+                                {% if exchange.tradingFeeTaker %}
+                                    <span>{{ (exchange.tradingFeeTaker * 100)|number_format(2) }}% fees</span>
+                                {% endif %}
+                            </div>
+                            <div class="exchange-card-flags">
+                                {% if exchange.isRegulated %}<span class="badge badge--green">Regulated</span>{% endif %}
+                                {% if exchange.hasMobileApp %}<span class="badge">Mobile App</span>{% endif %}
+                                {% if not exchange.kycRequired %}<span class="badge">No KYC</span>{% endif %}
+                            </div>
+                            <span class="btn-primary btn--sm" style="margin-top:.5rem">Read Review →</span>
+                        </a>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <h3>Reviews coming soon</h3>
+                    <p>We're preparing in-depth reviews. Check back soon.</p>
+                </div>
+            {% endif %}
+
+        </div>
+
+        <aside class="sidebar">
+            <div class="sidebar-widget">
+                <h3>Top Rated Exchanges</h3>
+                <ul class="sidebar-links">
+                    <li><a href="/reviews/binance-review">Binance Review</a></li>
+                    <li><a href="/reviews/coinbase-review">Coinbase Review</a></li>
+                    <li><a href="/reviews/kraken-review">Kraken Review</a></li>
+                    <li><a href="/reviews/bybit-review">Bybit Review</a></li>
+                    <li><a href="/reviews/okx-review">OKX Review</a></li>
+                </ul>
+            </div>
+            {{ include('components/sidebar.html.twig', {categories: categories}) }}
+        </aside>
+
+    </div>
+</div>
+
+{% endblock %}

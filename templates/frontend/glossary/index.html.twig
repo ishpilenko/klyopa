@@ -1,0 +1,86 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ meta_title }}{% endblock %}
+
+{% block body %}
+
+<div class="container">
+    <div class="layout">
+
+        {# ── Main column ───────────────────────────────────── #}
+        <div>
+
+            {# Breadcrumbs #}
+            <nav class="breadcrumb" aria-label="Breadcrumb">
+                <a href="/">Home</a>
+                <span>›</span>
+                <span>Crypto Glossary</span>
+            </nav>
+
+            <div class="page-header">
+                <h1>Crypto Glossary</h1>
+                <p class="page-intro">{{ total }} cryptocurrency terms explained — from Bitcoin basics to advanced DeFi concepts.</p>
+            </div>
+
+            {# ── Alphabet navigation ─── #}
+            {% if terms_by_letter is not empty %}
+                <div class="glossary-nav" aria-label="Jump to letter">
+                    {% for letter, terms in terms_by_letter %}
+                        <a href="#letter-{{ letter }}" class="glossary-nav-letter">{{ letter }}</a>
+                    {% endfor %}
+                </div>
+
+                {# ── Terms grouped by letter ─── #}
+                {% for letter, terms in terms_by_letter %}
+                    <section id="letter-{{ letter }}" class="glossary-section">
+                        <h2 class="glossary-letter-heading">{{ letter }}</h2>
+                        <div class="glossary-grid">
+                            {% for term in terms %}
+                                <a href="/glossary/{{ term.slug }}" class="glossary-card">
+                                    <strong>{{ term.term }}</strong>
+                                    <p>{{ term.shortDefinition|striptags|slice(0, 120) }}{% if term.shortDefinition|length > 120 %}…{% endif %}</p>
+                                </a>
+                            {% endfor %}
+                        </div>
+                    </section>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <h3>Glossary coming soon</h3>
+                    <p>We're building our comprehensive crypto glossary. Check back soon!</p>
+                </div>
+            {% endif %}
+
+        </div>
+
+        {# ── Sidebar ───────────────────────────────────────── #}
+        <aside class="sidebar">
+            <div class="sidebar-widget">
+                <h3>Quick Tools</h3>
+                <ul class="sidebar-links">
+                    <li><a href="/fear-greed-index">Fear & Greed Index</a></li>
+                    <li><a href="/tools/crypto-profit-calculator">Profit Calculator</a></li>
+                    <li><a href="/tools/dca-calculator">DCA Calculator</a></li>
+                    <li><a href="/tools/gas-tracker">Gas Tracker</a></li>
+                    <li><a href="/prices">Live Crypto Prices</a></li>
+                    <li><a href="/tools/converter">Crypto Converter</a></li>
+                </ul>
+            </div>
+            {{ include('components/sidebar.html.twig', {categories: categories}) }}
+        </aside>
+
+    </div>
+</div>
+
+{# JSON-LD #}
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "name": "Crypto Glossary",
+    "description": "{{ total }} cryptocurrency terms explained",
+    "url": "{{ app.request.schemeAndHttpHost }}/glossary"
+}
+</script>
+
+{% endblock %}

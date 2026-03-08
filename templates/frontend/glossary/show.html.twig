@@ -1,0 +1,136 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ meta_title }}{% endblock %}
+
+{% block body %}
+
+<div class="container">
+    <div class="layout">
+
+        {# ── Main column ───────────────────────────────────── #}
+        <article class="article-body">
+
+            {# Breadcrumbs #}
+            <nav class="breadcrumb" aria-label="Breadcrumb">
+                <a href="/">Home</a>
+                <span>›</span>
+                <a href="/glossary">Glossary</a>
+                <span>›</span>
+                <span>{{ term.term }}</span>
+            </nav>
+
+            {# Hero #}
+            <header class="article-header">
+                <h1>What is {{ term.term }}?</h1>
+                <div class="glossary-short-def">
+                    <p>{{ term.shortDefinition }}</p>
+                </div>
+            </header>
+
+            {# Full content #}
+            <div class="article-content">
+                {{ term.fullContent|raw }}
+            </div>
+
+            {# ── Related Terms ─── #}
+            {% if related_terms is not empty %}
+                <section class="related-terms">
+                    <h2>Related Terms</h2>
+                    <div class="related-terms-grid">
+                        {% for related in related_terms %}
+                            <a href="/glossary/{{ related.slug }}" class="related-term-card">
+                                <strong>{{ related.term }}</strong>
+                                <p>{{ related.shortDefinition|striptags|slice(0, 80) }}…</p>
+                            </a>
+                        {% endfor %}
+                    </div>
+                </section>
+            {% endif %}
+
+            {# ── FAQ ─── #}
+            {% if term.faqJson is not empty %}
+                <section class="article-faq">
+                    <h2>Frequently Asked Questions</h2>
+                    <div class="faq-list">
+                        {% for faq in term.faqJson %}
+                            <details class="faq-item">
+                                <summary>{{ faq.question }}</summary>
+                                <div class="faq-answer">{{ faq.answer }}</div>
+                            </details>
+                        {% endfor %}
+                    </div>
+                </section>
+            {% endif %}
+
+            {# Back to glossary #}
+            <p style="margin-top:2rem">
+                <a href="/glossary" class="btn-secondary">← Back to Crypto Glossary</a>
+            </p>
+
+        </article>
+
+        {# ── Sidebar ───────────────────────────────────────── #}
+        <aside class="sidebar">
+            <div class="sidebar-widget">
+                <h3>Explore Glossary</h3>
+                <ul class="sidebar-links">
+                    <li><a href="/glossary">Full Glossary A–Z</a></li>
+                    <li><a href="/glossary/blockchain">Blockchain</a></li>
+                    <li><a href="/glossary/defi">DeFi</a></li>
+                    <li><a href="/glossary/smart-contract">Smart Contract</a></li>
+                    <li><a href="/glossary/staking">Staking</a></li>
+                    <li><a href="/glossary/gas-fee">Gas Fee</a></li>
+                </ul>
+            </div>
+            <div class="sidebar-widget">
+                <h3>Related Tools</h3>
+                <ul class="sidebar-links">
+                    <li><a href="/fear-greed-index">Fear & Greed Index</a></li>
+                    <li><a href="/tools/crypto-profit-calculator">Profit Calculator</a></li>
+                    <li><a href="/prices">Live Crypto Prices</a></li>
+                </ul>
+            </div>
+            {{ include('components/sidebar.html.twig', {categories: categories}) }}
+        </aside>
+
+    </div>
+</div>
+
+{# ── JSON-LD ─────────────────────────────────────────────── #}
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "DefinedTerm",
+    "name": "{{ term.term|e('js') }}",
+    "description": "{{ term.shortDefinition|striptags|e('js') }}",
+    "inDefinedTermSet": {
+        "@type": "DefinedTermSet",
+        "name": "Crypto Glossary",
+        "url": "{{ app.request.schemeAndHttpHost }}/glossary"
+    },
+    "url": "{{ app.request.schemeAndHttpHost }}/glossary/{{ term.slug }}"
+}
+</script>
+
+{% if term.faqJson is not empty %}
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+        {% for faq in term.faqJson %}
+        {
+            "@type": "Question",
+            "name": "{{ faq.question|e('js') }}",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "{{ faq.answer|striptags|e('js') }}"
+            }
+        }{% if not loop.last %},{% endif %}
+        {% endfor %}
+    ]
+}
+</script>
+{% endif %}
+
+{% endblock %}

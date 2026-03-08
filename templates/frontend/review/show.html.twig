@@ -1,0 +1,145 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ meta_title }}{% endblock %}
+
+{% block body %}
+
+<div class="container">
+    <div class="layout">
+
+        <article class="article-body">
+
+            <nav class="breadcrumb" aria-label="Breadcrumb">
+                <a href="/">Home</a>
+                <span>›</span>
+                <a href="/reviews/exchanges">Reviews</a>
+                <span>›</span>
+                <span>{{ article.title }}</span>
+            </nav>
+
+            <header class="article-header">
+                <h1>{{ article.title }}</h1>
+                <div class="article-meta">
+                    <time datetime="{{ article.publishedAt|date('Y-m-d') }}">Updated {{ article.updatedAt|date('F j, Y') }}</time>
+                </div>
+            </header>
+
+            {# ── Exchange data structured card ─────────────── #}
+            {% if exchange_data %}
+                <div class="exchange-info-card">
+                    <div class="exchange-info-header">
+                        <h2 class="exchange-info-name">{{ exchange_data.name }}</h2>
+                        {% if exchange_data.rating %}
+                            <div class="exchange-info-rating">
+                                <span class="rating-stars">
+                                    {% for i in 1..5 %}
+                                        {% if exchange_data.rating >= (i * 2) %}★{% elseif exchange_data.rating >= (i * 2 - 1) %}½{% else %}☆{% endif %}
+                                    {% endfor %}
+                                </span>
+                                <span class="rating-value">{{ exchange_data.rating|number_format(1) }}/10</span>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="exchange-info-grid">
+                        {% if exchange_data.foundedYear %}
+                            <div><span class="label">Founded</span><span>{{ exchange_data.foundedYear }}</span></div>
+                        {% endif %}
+                        {% if exchange_data.headquarters %}
+                            <div><span class="label">Headquarters</span><span>{{ exchange_data.headquarters }}</span></div>
+                        {% endif %}
+                        {% if exchange_data.supportedCoins %}
+                            <div><span class="label">Supported Coins</span><span>{{ exchange_data.supportedCoins }}+</span></div>
+                        {% endif %}
+                        {% if exchange_data.tradingFeeMaker %}
+                            <div><span class="label">Maker Fee</span><span>{{ (exchange_data.tradingFeeMaker * 100)|number_format(2) }}%</span></div>
+                        {% endif %}
+                        {% if exchange_data.tradingFeeTaker %}
+                            <div><span class="label">Taker Fee</span><span>{{ (exchange_data.tradingFeeTaker * 100)|number_format(2) }}%</span></div>
+                        {% endif %}
+                        <div><span class="label">Mobile App</span><span>{{ exchange_data.hasMobileApp ? 'Yes' : 'No' }}</span></div>
+                        <div><span class="label">Regulated</span><span>{{ exchange_data.isRegulated ? 'Yes' : 'Not confirmed' }}</span></div>
+                        <div><span class="label">KYC Required</span><span>{{ exchange_data.kycRequired ? 'Yes' : 'No' }}</span></div>
+                    </div>
+                    {% if exchange_data.affiliateUrl %}
+                        <div class="exchange-info-cta">
+                            <a href="/go/{{ exchange_data.slug }}" rel="nofollow noopener sponsored" target="_blank" class="btn-primary">
+                                Visit {{ exchange_data.name }} →
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            {% endif %}
+
+            {# ── Article content ─────────────────────────── #}
+            <div class="article-content">
+                {{ article.content|raw }}
+            </div>
+
+            {# ── Related reviews ─────────────────────────── #}
+            {% if related_exchanges is defined and related_exchanges is not empty %}
+                <section class="related-reviews">
+                    <h2>Compare Other Exchanges</h2>
+                    <div class="related-exchanges-row">
+                        {% for ex in related_exchanges %}
+                            {% if ex.slug != exchange_data.slug %}
+                                <a href="/reviews/{{ ex.slug }}-review" class="related-exchange-chip">
+                                    {{ ex.name }}
+                                    {% if ex.rating %}<span>★ {{ ex.rating|number_format(1) }}</span>{% endif %}
+                                </a>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </section>
+            {% endif %}
+
+        </article>
+
+        <aside class="sidebar">
+            <div class="sidebar-widget">
+                <h3>Exchange Reviews</h3>
+                <ul class="sidebar-links">
+                    <li><a href="/reviews/binance-review">Binance</a></li>
+                    <li><a href="/reviews/coinbase-review">Coinbase</a></li>
+                    <li><a href="/reviews/kraken-review">Kraken</a></li>
+                    <li><a href="/reviews/bybit-review">Bybit</a></li>
+                    <li><a href="/reviews/okx-review">OKX</a></li>
+                </ul>
+            </div>
+            <div class="sidebar-widget">
+                <h3>Related Tools</h3>
+                <ul class="sidebar-links">
+                    <li><a href="/tools/crypto-profit-calculator">Profit Calculator</a></li>
+                    <li><a href="/tools/dca-calculator">DCA Calculator</a></li>
+                    <li><a href="/tools/gas-tracker">Gas Tracker</a></li>
+                </ul>
+            </div>
+            {{ include('components/sidebar.html.twig', {categories: categories}) }}
+        </aside>
+
+    </div>
+</div>
+
+{# JSON-LD Review #}
+{% if exchange_data and exchange_data.rating %}
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "Review",
+    "itemReviewed": {
+        "@type": "Organization",
+        "name": "{{ exchange_data.name|e('js') }}"
+    },
+    "reviewRating": {
+        "@type": "Rating",
+        "ratingValue": "{{ exchange_data.rating }}",
+        "bestRating": "10",
+        "worstRating": "0"
+    },
+    "author": { "@type": "Organization", "name": "{{ site.name|e('js') }}" },
+    "datePublished": "{{ article.publishedAt|date('c') }}",
+    "headline": "{{ article.title|e('js') }}"
+}
+</script>
+{% endif %}
+
+{% endblock %}

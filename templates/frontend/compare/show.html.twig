@@ -1,0 +1,110 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ meta_title }}{% endblock %}
+
+{% block body %}
+
+<div class="container">
+    <div class="layout">
+
+        <article class="article-body">
+
+            <nav class="breadcrumb" aria-label="Breadcrumb">
+                <a href="/">Home</a>
+                <span>›</span>
+                <a href="/compare">Comparisons</a>
+                <span>›</span>
+                <span>{{ article.title }}</span>
+            </nav>
+
+            <header class="article-header">
+                <h1>{{ article.title }}</h1>
+                {% if article.excerpt %}
+                    <p class="article-excerpt">{{ article.excerpt }}</p>
+                {% endif %}
+                <div class="article-meta">
+                    <time datetime="{{ article.publishedAt|date('Y-m-d') }}">{{ article.publishedAt|date('F j, Y') }}</time>
+                </div>
+            </header>
+
+            {# ── Live price mini-widget ────────────────────── #}
+            {% if price_data is not empty %}
+                <div class="compare-price-widget">
+                    {% for coinId, coin in price_data %}
+                        {% set change = coin.price_change_percentage_24h ?? 0 %}
+                        <div class="compare-price-item">
+                            {% if coin.image is defined %}
+                                <img src="{{ coin.image }}" alt="{{ coin.symbol|upper }}" width="32" height="32">
+                            {% endif %}
+                            <div>
+                                <strong>{{ coin.name }}</strong>
+                                <span class="price">${{ coin.current_price|number_format(coin.current_price >= 1 ? 2 : 4) }}</span>
+                                <span class="{{ change >= 0 ? 'price-up' : 'price-down' }}">
+                                    {{ change >= 0 ? '+' : '' }}{{ change|number_format(2) }}%
+                                </span>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            {# ── Article content ──────────────────────────── #}
+            <div class="article-content">
+                {{ article.content|raw }}
+            </div>
+
+            {# ── Related comparisons ─────────────────────── #}
+            {% if related_articles is not empty %}
+                <section class="related-articles">
+                    <h2>More Comparisons</h2>
+                    <div class="article-grid article-grid--small">
+                        {% for related in related_articles %}
+                            {{ include('components/article_card.html.twig', {article: related}) }}
+                        {% endfor %}
+                    </div>
+                </section>
+            {% endif %}
+
+        </article>
+
+        <aside class="sidebar">
+            <div class="sidebar-widget">
+                <h3>Quick Compare</h3>
+                <ul class="sidebar-links">
+                    <li><a href="/compare/bitcoin-vs-ethereum">BTC vs ETH</a></li>
+                    <li><a href="/compare/ethereum-vs-solana">ETH vs SOL</a></li>
+                    <li><a href="/compare/bitcoin-vs-gold">BTC vs Gold</a></li>
+                    <li><a href="/compare/dogecoin-vs-shiba-inu">DOGE vs SHIB</a></li>
+                </ul>
+            </div>
+            <div class="sidebar-widget">
+                <h3>Live Prices</h3>
+                <ul class="sidebar-links">
+                    <li><a href="/price/bitcoin">Bitcoin Price</a></li>
+                    <li><a href="/price/ethereum">Ethereum Price</a></li>
+                    <li><a href="/price/solana">Solana Price</a></li>
+                    <li><a href="/prices">All Prices</a></li>
+                </ul>
+            </div>
+            {{ include('components/sidebar.html.twig', {categories: categories}) }}
+        </aside>
+
+    </div>
+</div>
+
+{# JSON-LD #}
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": "{{ article.title|e('js') }}",
+    "description": "{{ (article.excerpt ?? article.metaDescription)|striptags|e('js') }}",
+    "datePublished": "{{ article.publishedAt|date('c') }}",
+    "dateModified": "{{ article.updatedAt|date('c') }}",
+    "author": { "@type": "Organization", "name": "{{ site.name|e('js') }}" },
+    "publisher": { "@type": "Organization", "name": "{{ site.name|e('js') }}" },
+    "mainEntityOfPage": { "@type": "WebPage", "@id": "{{ app.request.schemeAndHttpHost ~ app.request.pathInfo }}" }
+}
+</script>
+
+{% endblock %}

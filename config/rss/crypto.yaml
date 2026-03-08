@@ -1,0 +1,35 @@
+feeds:
+  - url: https://cointelegraph.com/rss
+    name: CoinTelegraph
+    priority: high
+
+  - url: https://decrypt.co/feed
+    name: Decrypt
+    priority: high
+
+  - url: https://www.coindesk.com/arc/outboundfeeds/rss/
+    name: CoinDesk
+    priority: high
+
+  - url: https://cryptonews.com/news/feed/
+    name: CryptoNews
+    priority: medium
+
+  - url: https://bitcoinmagazine.com/.rss/full/
+    name: Bitcoin Magazine
+    priority: medium
+
+  - url: https://blog.ethereum.org/feed.xml
+    name: Ethereum Blog
+    priority: medium
+
+categories_map:
+  bitcoin:     bitcoin-news
+  ethereum:    ethereum-news
+  defi:        defi-news
+  nft:         nft-news
+  regulation:  regulation
+  market:      market-analysis
+  exchange:    exchange-news
+  altcoin:     altcoin-news
+  default:     market-analysis

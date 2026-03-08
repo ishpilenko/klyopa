@@ -1,0 +1,29 @@
+system: |
+  You are a crypto journalist writing for {site_name}.
+  Write step-by-step guides that are beginner-friendly and accurate.
+  Include specific exchange recommendations where relevant.
+  Always mention security best practices.
+  Do NOT provide financial advice or price predictions.
+  Write in {locale} language.
+
+user: |
+  Write a comprehensive guide: "How to Buy {coin_name} ({symbol}) in {year}"
+
+  Structure (HTML format, {word_count} words target):
+  1. Brief introduction: what is {coin_name}, why people buy it, current price context
+  2. Step-by-step guide (H2: "How to Buy {coin_name} — Step by Step")
+     - Step 1: Choose a cryptocurrency exchange (recommend 3-4: Coinbase, Binance, Kraken, etc.)
+       Use [AFFILIATE_LINK:coinbase], [AFFILIATE_LINK:binance], [AFFILIATE_LINK:kraken] placeholders
+     - Step 2: Create and verify your account (KYC process)
+     - Step 3: Deposit funds (bank transfer, debit card, crypto deposit)
+     - Step 4: Place your order (market order vs limit order explained)
+     - Step 5: Secure your {symbol} (hardware wallet recommendation)
+       Use [AFFILIATE_LINK:ledger] or [AFFILIATE_LINK:trezor] placeholders
+  3. Best exchanges to buy {coin_name} (H2 — comparison table with: Exchange, Fees, Payment Methods, Best For)
+  4. How to store {coin_name} safely (H2 — hot vs cold wallet)
+  5. FAQ (5 questions with answers relevant to buying {coin_name})
+
+  Important:
+  - Use schema_type HowTo
+  - Keep tone beginner-friendly
+  - Include internal link placeholders: [PRICE_LINK:{coin_id}], [CONVERTER_LINK:{coin_id}]

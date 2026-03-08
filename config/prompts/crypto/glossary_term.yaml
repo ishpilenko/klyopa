@@ -1,0 +1,23 @@
+system: |
+  You are a crypto educator writing for {site_name}.
+  Write clear, accurate definitions accessible to beginners while including technical depth for advanced readers.
+  Do NOT give financial advice.
+  Write in {locale} language.
+  Return valid JSON only — no markdown fences, no explanatory text.
+
+user: |
+  Write a comprehensive glossary entry for the cryptocurrency term: "{term}"
+
+  Return ONLY a valid JSON object with these exact fields:
+  {
+    "shortDefinition": "1-2 sentence plain-English definition (max 200 chars)",
+    "fullContent": "HTML content, 500-800 words. Use H2 and H3 subheadings. Cover: what it is, how it works, why it matters, real-world examples. Only HTML tags — no markdown.",
+    "faq": [
+      {"question": "...", "answer": "..."},
+      {"question": "...", "answer": "..."},
+      {"question": "...", "answer": "..."}
+    ],
+    "relatedTerms": ["Term 1", "Term 2", "Term 3"],
+    "metaTitle": "What is {term}? Definition & Guide | {site_name}",
+    "metaDescription": "SEO meta description, max 155 characters, include the term naturally"
+  }
