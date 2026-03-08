@@ -1308,11 +1308,15 @@ select.form-control { cursor: pointer; }
 .coin-name-link {
     font-weight: 600;
     color: var(--color-text);
-    display: block;
+    display: inline;
 }
 .coin-name-link:hover { color: var(--color-primary); text-decoration: none; }
 
-.coin-symbol { font-size: .8rem; display: block; }
+.coin-symbol {
+    font-size: .8rem;
+    display: inline;
+    margin-left: .3rem;
+}
 
 .price-cell { font-weight: 700; }
 
@@ -1649,7 +1653,12 @@ select.form-control { cursor: pointer; }
 
     /* Data table text smaller */
     .data-table th, .data-table td { padding: .4rem .75rem; font-size: .85rem; }
-    .prices-table th, .prices-table td { padding: .5rem .75rem; }
+    .prices-table th, .prices-table td { padding: .45rem .6rem; font-size: .875rem; }
+    .coin-name-cell { gap: .375rem; }
+    .coin-thumb { width: 20px; height: 20px; }
+    .col-rank { width: 2rem; }
+    .col-price { width: 7rem; }
+    .col-change { width: 5.5rem; }
 
     /* Price chart height */
     .price-chart-svg { height: 120px; }
