@@ -1,0 +1,207 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ meta_title }}{% endblock %}
+{% block og_title %}{{ meta_title }}{% endblock %}
+{% block og_description %}{{ meta_description }}{% endblock %}
+
+{% block schema_markup %}
+    {{ schema_breadcrumb(breadcrumbs, app.request.schemeAndHttpHost) }}
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+            {
+                "@type": "Question",
+                "name": "What if I invested $1,000 in {{ coin_name }} 5 years ago?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Use our investment calculator above to find out what $1,000 invested in {{ coin_name }} on any date would be worth today at the current price."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "How does the {{ coin_name }} investment calculator work?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Enter the amount you want to calculate, select {{ coin_name }} ({{ coin_symbol }}), and choose the investment date. The calculator retrieves the historical price for that date and computes how many coins you could have bought, then multiplies by the current price to show today's value."
+                }
+            }
+        ]
+    }
+    </script>
+{% endblock %}
+
+{% block body %}
+    <section class="page-hero">
+        <div class="container">
+            {{ include('components/breadcrumb.html.twig', {items: breadcrumbs}) }}
+            <h1>
+                {% if coin_image %}<img src="{{ coin_image }}" alt="{{ coin_name }}" width="40" height="40" style="vertical-align:middle;border-radius:50%;margin-right:.5rem">{% endif %}
+                If I Had Invested in {{ coin_name }}
+            </h1>
+            <p>Calculate what your {{ coin_name }} investment would be worth today.</p>
+        </div>
+    </section>
+
+    <div class="container" style="padding-bottom:3rem">
+
+        {# ── Calculator form ── #}
+        <div class="tool-card" style="max-width:640px;margin-bottom:2rem">
+            <form method="get" action="/tools/investment-calculator/{{ coin }}" class="investment-form">
+
+                <div class="tool-fields" style="grid-template-columns:1fr 1fr">
+                    <div class="form-group">
+                        <label for="inv-coin">Cryptocurrency</label>
+                        <select name="coin" id="inv-coin" class="form-control"
+                                onchange="this.form.action='/tools/investment-calculator/'+this.value;this.form.submit()">
+                            {% for c in top_coins %}
+                                <option value="{{ c.id }}" {{ c.id == coin ? 'selected' : '' }}>
+                                    {{ c.name }} ({{ c.symbol|upper }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="inv-amount">Amount Invested (USD)</label>
+                        <div class="input-wrapper">
+                            <span class="input-addon input-addon--prefix">$</span>
+                            <input type="number"
+                                   id="inv-amount"
+                                   name="amount"
+                                   class="form-control has-prefix"
+                                   value="{{ amount ?? 1000 }}"
+                                   min="1"
+                                   step="any"
+                                   placeholder="e.g. 1000"
+                                   required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="inv-date">Investment Date</label>
+                        <input type="date"
+                               id="inv-date"
+                               name="date"
+                               class="form-control"
+                               value="{{ date }}"
+                               min="2013-01-01"
+                               max="{{ 'yesterday'|date('Y-m-d') }}"
+                               required>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-calculate">Calculate Returns</button>
+            </form>
+        </div>
+
+        {# ── Error ── #}
+        {% if error %}
+            <div class="alert-error" style="margin-bottom:2rem">{{ error }}</div>
+        {% endif %}
+
+        {# ── Result ── #}
+        {% if result %}
+            <div class="tool-results results--visible" style="max-width:640px;margin-bottom:2rem">
+                <p class="results-title">Your Investment Result</p>
+
+                <div class="investment-summary">
+                    <p style="font-size:1.05rem;margin-bottom:1.5rem">
+                        If you had invested <strong>${{ amount|number_format(2) }}</strong> in
+                        <strong>{{ coin_name }} ({{ coin_symbol }})</strong> on <strong>{{ date }}</strong>:
+                    </p>
+                </div>
+
+                <div class="results-grid">
+                    <div class="result-item">
+                        <span class="result-label">Historical Price</span>
+                        <span class="result-value">
+                            ${{ result.historical_price >= 1 ? result.historical_price|number_format(2) : result.historical_price|number_format(6)|trim('0')|trim('.') }}
+                        </span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">{{ coin_symbol }} Acquired</span>
+                        <span class="result-value">{{ result.coins_acquired|number_format(8)|trim('0')|trim('.') }}</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">Current Price</span>
+                        <span class="result-value">
+                            ${{ result.current_price >= 1 ? result.current_price|number_format(2) : result.current_price|number_format(6)|trim('0')|trim('.') }}
+                        </span>
+                    </div>
+                    <div class="result-item result-item--highlight">
+                        <span class="result-label">Current Value</span>
+                        <span class="result-value">${{ result.current_value|number_format(2) }}</span>
+                    </div>
+                    <div class="result-item {{ result.is_profit ? 'result-item--profit' : 'result-item--loss' }}">
+                        <span class="result-label">{{ result.is_profit ? 'Profit' : 'Loss' }}</span>
+                        <span class="result-value {{ result.is_profit ? 'price-up' : 'price-down' }}">
+                            {{ result.is_profit ? '+' : '' }}${{ result.profit|abs|number_format(2) }}
+                        </span>
+                    </div>
+                    <div class="result-item {{ result.is_profit ? 'result-item--profit' : 'result-item--loss' }}">
+                        <span class="result-label">Return</span>
+                        <span class="result-value {{ result.is_profit ? 'price-up' : 'price-down' }}">
+                            {{ result.is_profit ? '+' : '' }}{{ result.percent_return|number_format(2) }}%
+                        </span>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        {# ── Pre-calculated scenarios ── #}
+        <div class="section-header" style="margin-top:3rem">
+            <h2>Popular Investment Scenarios</h2>
+        </div>
+        <p class="text-muted" style="margin-bottom:1.5rem">See what popular investments would be worth at today's prices.</p>
+        <div class="tools-grid">
+            {% for s in scenarios %}
+                <a href="/tools/investment-calculator/{{ s.coin }}?amount={{ s.amount }}&date={{ s.date }}"
+                   class="tool-card-link">
+                    <div class="tool-card-mini">
+                        <strong>{{ s.label }}</strong>
+                        <p style="margin:.5rem 0 0;color:var(--color-text-muted);font-size:.875rem">
+                            Click to calculate current value →
+                        </p>
+                    </div>
+                </a>
+            {% endfor %}
+        </div>
+
+        {# ── FAQ ── #}
+        <section class="faq-section" style="margin-top:3rem">
+            <h2>Frequently Asked Questions</h2>
+
+            <div class="faq-item">
+                <h3>How does the {{ coin_name }} investment calculator work?</h3>
+                <p>
+                    Enter the amount in USD you would have invested, select the cryptocurrency,
+                    and pick the investment date. The calculator looks up the historical price for that date
+                    and determines how many coins you could have purchased. It then multiplies the coin
+                    amount by the current live price to show your portfolio's present value.
+                </p>
+            </div>
+
+            <div class="faq-item">
+                <h3>Are the historical prices accurate?</h3>
+                <p>
+                    Historical prices are sourced from CoinGecko, which aggregates data from major
+                    exchanges. Prices are daily closing prices and represent the average across exchanges.
+                    Actual purchase prices may have varied depending on the exchange and exact time of day.
+                </p>
+            </div>
+
+            <div class="faq-item">
+                <h3>What is the best time to invest in crypto?</h3>
+                <p>
+                    Nobody can predict the market. Dollar-cost averaging (DCA) — investing a fixed
+                    amount regularly — is a strategy used by many investors to reduce the impact of
+                    price volatility. This calculator shows historical returns for reference only
+                    and is not financial advice.
+                </p>
+            </div>
+        </section>
+
+    </div>
+{% endblock %}

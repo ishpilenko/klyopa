@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+        <loc>{{ base_url }}/prices</loc>
+        <changefreq>hourly</changefreq>
+        <priority>0.8</priority>
+    </url>
+    {% for coin in coins %}
+    <url>
+        <loc>{{ base_url }}/price/{{ coin.slug }}</loc>
+        <lastmod>{{ coin.updatedAt|date('Y-m-d') }}</lastmod>
+        <changefreq>hourly</changefreq>
+        <priority>0.7</priority>
+    </url>
+    {% endfor %}
+</urlset>

@@ -31,3 +31,7 @@ services:
     App\EventSubscriber\PageCacheSubscriber:
         arguments:
             $appEnv: '%kernel.environment%'
+
+    App\Command\GenerateCoinDescriptionsCommand:
+        arguments:
+            $anthropicApiKey: '%env(default::ANTHROPIC_API_KEY)%'

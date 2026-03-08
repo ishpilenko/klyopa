@@ -6,7 +6,9 @@ namespace App\Controller\Frontend;
 
 use App\Repository\ArticleRepository;
 use App\Repository\CategoryRepository;
+use App\Repository\CoinPageRepository;
 use App\Repository\ToolRepository;
+use App\Service\CoinGecko\CoinGeckoClient;
 use App\Service\SiteContext;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
@@ -22,6 +24,8 @@ class SitemapController extends AbstractController
         private readonly ArticleRepository $articleRepository,
         private readonly CategoryRepository $categoryRepository,
         private readonly ToolRepository $toolRepository,
+        private readonly CoinPageRepository $coinPageRepository,
+        private readonly CoinGeckoClient $coinGecko,
     ) {
     }
 
@@ -92,6 +96,36 @@ class SitemapController extends AbstractController
         return $this->xmlResponse('sitemap/tools.xml.twig', [
             'base_url' => $baseUrl,
             'tools' => $tools,
+        ]);
+    }
+
+    /** Price pages sitemap */
+    #[Route('/sitemap-prices.xml', name: 'app_sitemap_prices', methods: ['GET'])]
+    public function prices(): Response
+    {
+        $site    = $this->siteContext->getSite();
+        $baseUrl = 'https://' . $site->getDomain();
+        $coins   = $this->coinPageRepository->findForSitemap();
+
+        return $this->xmlResponse('sitemap/prices.xml.twig', [
+            'base_url' => $baseUrl,
+            'coins'    => $coins,
+        ]);
+    }
+
+    /** Converter pages sitemap (dynamic, from CoinGecko top coins) */
+    #[Route('/sitemap-converter.xml', name: 'app_sitemap_converter', methods: ['GET'])]
+    public function converter(): Response
+    {
+        $site    = $this->siteContext->getSite();
+        $baseUrl = 'https://' . $site->getDomain();
+        $topCoins = $this->coinGecko->getTopCoins('usd', 100);
+        $fiats    = ['usd', 'eur', 'gbp', 'jpy', 'aud', 'cad', 'chf', 'cny'];
+
+        return $this->xmlResponse('sitemap/converter.xml.twig', [
+            'base_url'  => $baseUrl,
+            'top_coins' => $topCoins,
+            'fiats'     => $fiats,
         ]);
     }
 

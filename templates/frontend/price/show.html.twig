@@ -1,0 +1,281 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ meta_title }}{% endblock %}
+{% block og_title %}{{ meta_title }}{% endblock %}
+{% block og_description %}{{ meta_description }}{% endblock %}
+{% block og_image %}
+    {% if image_url %}
+        <meta property="og:image" content="{{ image_url }}">
+    {% endif %}
+{% endblock %}
+
+{% block schema_markup %}
+    {{ schema_breadcrumb(breadcrumbs, app.request.schemeAndHttpHost) }}
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "{{ name }} ({{ symbol }}) Price Today",
+        "description": "{{ meta_description|e('js') }}",
+        "url": "{{ app.request.schemeAndHttpHost }}/price/{{ coin_id }}",
+        "mainEntity": {
+            "@type": "Thing",
+            "name": "{{ name }}",
+            "alternateName": "{{ symbol }}"
+        }
+    }
+    </script>
+    {% if coin_page and coin_page.faqJson %}
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+            {% for faq in coin_page.faqJson %}
+            {
+                "@type": "Question",
+                "name": {{ faq.q|json_encode|raw }},
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": {{ faq.a|json_encode|raw }}
+                }
+            }{% if not loop.last %},{% endif %}
+            {% endfor %}
+        ]
+    }
+    </script>
+    {% endif %}
+{% endblock %}
+
+{% block body %}
+
+    {# ── Hero: price display ── #}
+    <section class="price-hero">
+        <div class="container">
+            {{ include('components/breadcrumb.html.twig', {items: breadcrumbs}) }}
+
+            <div class="price-hero-inner">
+                <div class="price-hero-left">
+                    {% if image_url %}
+                        <img src="{{ image_url }}" alt="{{ name }}" width="56" height="56" class="coin-icon-lg">
+                    {% endif %}
+                    <div>
+                        <h1>{{ name }} <span class="coin-symbol-badge">{{ symbol }}</span></h1>
+                        {% if rank %}<span class="text-muted" style="font-size:.9rem">Rank #{{ rank }}</span>{% endif %}
+                    </div>
+                </div>
+
+                <div class="price-hero-right">
+                    <div class="price-display">
+                        {% if price is not null %}
+                            ${{ price >= 1 ? price|number_format(2) : price|number_format(6)|trim('0')|trim('.') }}
+                        {% else %}
+                            <span class="text-muted">N/A</span>
+                        {% endif %}
+                    </div>
+                    <div class="price-changes">
+                        {% if change_24h is not null %}
+                            <span class="price-change-badge {{ change_24h >= 0 ? 'badge-up' : 'badge-down' }}">
+                                {{ change_24h >= 0 ? '▲' : '▼' }} {{ change_24h|abs|number_format(2) }}% (24h)
+                            </span>
+                        {% endif %}
+                        {% if change_7d is not null %}
+                            <span class="price-change-badge {{ change_7d >= 0 ? 'badge-up' : 'badge-down' }}">
+                                {{ change_7d >= 0 ? '▲' : '▼' }} {{ change_7d|abs|number_format(2) }}% (7d)
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="container" style="padding-bottom:3rem">
+
+        {# ── 7-day sparkline chart (SVG) ── #}
+        {% if chart_7d is not null and chart_7d|length > 1 %}
+            {% set prices = chart_7d|map(p => p[1]) %}
+            {% set min_p = min(prices) %}
+            {% set max_p = max(prices) %}
+            {% set range = max_p - min_p %}
+            {% set w = 800 %}
+            {% set h = 200 %}
+            {% set pad = 10 %}
+            {% set points = [] %}
+            {% for i, p in prices %}
+                {% set x = pad + (i / (prices|length - 1)) * (w - 2*pad) %}
+                {% set y = range > 0 ? pad + ((max_p - p) / range) * (h - 2*pad) : h / 2 %}
+                {% set points = points|merge([x|number_format(1) ~ ',' ~ y|number_format(1)]) %}
+            {% endfor %}
+            {% set last_price = prices|last %}
+            {% set first_price = prices|first %}
+            {% set chart_color = last_price >= first_price ? '#16a34a' : '#dc2626' %}
+
+            <div class="price-chart-wrap">
+                <div class="price-chart-header">
+                    <span class="text-muted" style="font-size:.85rem">7-Day Price Chart (USD)</span>
+                </div>
+                <svg viewBox="0 0 {{ w }} {{ h }}" class="price-chart-svg" aria-label="{{ name }} 7-day price chart" role="img">
+                    <defs>
+                        <linearGradient id="chart-grad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="{{ chart_color }}" stop-opacity="0.2"/>
+                            <stop offset="100%" stop-color="{{ chart_color }}" stop-opacity="0"/>
+                        </linearGradient>
+                    </defs>
+                    {# Filled area #}
+                    <polygon
+                        points="{{ points|join(' ') }} {{ (w - pad)|number_format(1) }},{{ (h - pad)|number_format(1) }} {{ pad }},{{ (h - pad)|number_format(1) }}"
+                        fill="url(#chart-grad)"/>
+                    {# Line #}
+                    <polyline
+                        points="{{ points|join(' ') }}"
+                        fill="none"
+                        stroke="{{ chart_color }}"
+                        stroke-width="2"
+                        stroke-linejoin="round"
+                        stroke-linecap="round"/>
+                </svg>
+                <div class="price-chart-footer">
+                    <span class="text-muted" style="font-size:.8rem">7 days ago</span>
+                    <span class="text-muted" style="font-size:.8rem">Now</span>
+                </div>
+            </div>
+        {% endif %}
+
+        {# ── Key metrics grid ── #}
+        <div class="price-metrics-grid">
+            {% if market_cap %}
+                <div class="metric-card">
+                    <span class="metric-label">Market Cap</span>
+                    <span class="metric-value">
+                        {% if market_cap >= 1000000000 %}
+                            ${{ (market_cap / 1000000000)|number_format(2) }}B
+                        {% else %}
+                            ${{ (market_cap / 1000000)|number_format(1) }}M
+                        {% endif %}
+                    </span>
+                </div>
+            {% endif %}
+            {% if volume_24h %}
+                <div class="metric-card">
+                    <span class="metric-label">24h Volume</span>
+                    <span class="metric-value">
+                        {% if volume_24h >= 1000000000 %}
+                            ${{ (volume_24h / 1000000000)|number_format(2) }}B
+                        {% else %}
+                            ${{ (volume_24h / 1000000)|number_format(1) }}M
+                        {% endif %}
+                    </span>
+                </div>
+            {% endif %}
+            {% if circ_supply %}
+                <div class="metric-card">
+                    <span class="metric-label">Circulating Supply</span>
+                    <span class="metric-value">{{ circ_supply|number_format(0) }} {{ symbol }}</span>
+                </div>
+            {% endif %}
+            {% if max_supply %}
+                <div class="metric-card">
+                    <span class="metric-label">Max Supply</span>
+                    <span class="metric-value">{{ max_supply|number_format(0) }} {{ symbol }}</span>
+                </div>
+            {% endif %}
+            {% if ath %}
+                <div class="metric-card">
+                    <span class="metric-label">All-Time High</span>
+                    <span class="metric-value">
+                        ${{ ath >= 1 ? ath|number_format(2) : ath|number_format(6)|trim('0')|trim('.') }}
+                        {% if ath_date %}
+                            <small class="text-muted" style="font-size:.75rem;display:block">{{ ath_date|slice(0,10) }}</small>
+                        {% endif %}
+                    </span>
+                </div>
+            {% endif %}
+            {% if rank %}
+                <div class="metric-card">
+                    <span class="metric-label">Market Cap Rank</span>
+                    <span class="metric-value">#{{ rank }}</span>
+                </div>
+            {% endif %}
+        </div>
+
+        {# ── Description ── #}
+        {% if coin_page and coin_page.description %}
+            <div class="tool-info" style="margin-top:2rem">
+                <h2>About {{ name }}</h2>
+                <div class="coin-description">{{ coin_page.description|raw }}</div>
+            </div>
+        {% endif %}
+
+        {# ── Inline converter ── #}
+        <div class="tool-info" style="margin-top:2rem">
+            <h2>Convert {{ symbol }} to USD</h2>
+            <p>
+                Quick conversion: use our full
+                <a href="/convert/{{ coin_id }}-to-usd">{{ name }} to USD converter</a>
+                or <a href="/convert/{{ coin_id }}-to-eur">{{ name }} to EUR</a>.
+            </p>
+            {% if price %}
+                <table class="data-table" style="max-width:400px">
+                    <thead><tr><th>{{ symbol }} Amount</th><th>USD Value</th></tr></thead>
+                    <tbody>
+                        {% for qty in [0.1, 0.5, 1, 5, 10, 50, 100] %}
+                            <tr>
+                                <td>{{ qty }} {{ symbol }}</td>
+                                <td>${{ (qty * price)|number_format(2) }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+        </div>
+
+        {# ── FAQ ── #}
+        {% if coin_page and coin_page.faqJson %}
+            <section class="faq-section" style="margin-top:2rem">
+                <h2>{{ name }} FAQ</h2>
+                {% for faq in coin_page.faqJson %}
+                    <div class="faq-item">
+                        <h3>{{ faq.q }}</h3>
+                        <p>{{ faq.a }}</p>
+                    </div>
+                {% endfor %}
+            </section>
+        {% else %}
+            <section class="faq-section" style="margin-top:2rem">
+                <h2>Frequently Asked Questions</h2>
+                <div class="faq-item">
+                    <h3>What is the current {{ name }} price?</h3>
+                    <p>
+                        The current {{ name }} ({{ symbol }}) price is
+                        {% if price %}${{ price >= 1 ? price|number_format(2) : price|number_format(6)|trim('0')|trim('.') }}{% else %}unavailable{% endif %}.
+                        The price is updated every 60 seconds from live market data.
+                    </p>
+                </div>
+                <div class="faq-item">
+                    <h3>How much is 1 {{ symbol }} in USD?</h3>
+                    <p>
+                        1 {{ symbol }} equals
+                        {% if price %}${{ price >= 1 ? price|number_format(2) : price|number_format(8)|trim('0')|trim('.') }} USD{% else %}an amount that varies with market conditions{% endif %}.
+                        Use our <a href="/convert/{{ coin_id }}-to-usd">{{ symbol }} to USD converter</a> for custom amounts.
+                    </p>
+                </div>
+                {% if ath %}
+                <div class="faq-item">
+                    <h3>What is the all-time high price of {{ name }}?</h3>
+                    <p>
+                        The all-time high (ATH) price of {{ name }} is
+                        ${{ ath >= 1 ? ath|number_format(2) : ath|number_format(6) }}{% if ath_date %}, reached on {{ ath_date|slice(0,10) }}{% endif %}.
+                    </p>
+                </div>
+                {% endif %}
+            </section>
+        {% endif %}
+
+        {# ── Back to prices ── #}
+        <div style="margin-top:2rem">
+            <a href="/prices" class="text-muted" style="font-size:.9rem">← All Cryptocurrency Prices</a>
+        </div>
+
+    </div>
+{% endblock %}

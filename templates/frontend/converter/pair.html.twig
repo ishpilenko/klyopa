@@ -1,0 +1,216 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ meta_title }}{% endblock %}
+{% block og_title %}{{ meta_title }}{% endblock %}
+{% block og_description %}{{ meta_description }}{% endblock %}
+
+{% block schema_markup %}
+    {{ schema_breadcrumb(breadcrumbs, app.request.schemeAndHttpHost) }}
+    {% if rate is not null %}
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+            {
+                "@type": "Question",
+                "name": "What is the current {{ from_symbol }} to {{ to_symbol }} exchange rate?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "1 {{ from_symbol }} is currently worth {{ rate|number_format(8)|trim('0')|trim('.') }} {{ to_symbol }}. Rates update every 60 seconds."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "How to convert {{ from_name }} to {{ to_name }}?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Enter the amount of {{ from_name }} ({{ from_symbol }}) you want to convert in the field above. The converter will instantly show you the equivalent value in {{ to_name }} ({{ to_symbol }}) at the current exchange rate."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "How much is {{ amount }} {{ from_symbol }} in {{ to_symbol }}?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "{{ amount }} {{ from_symbol }} equals {{ result|number_format(8)|trim('0')|trim('.') }} {{ to_symbol }} at the current exchange rate of 1 {{ from_symbol }} = {{ rate|number_format(8)|trim('0')|trim('.') }} {{ to_symbol }}."
+                }
+            }
+        ]
+    }
+    </script>
+    {% endif %}
+{% endblock %}
+
+{% block body %}
+    <section class="page-hero">
+        <div class="container">
+            {{ include('components/breadcrumb.html.twig', {items: breadcrumbs}) }}
+            <h1>Convert {{ from_name }} ({{ from_symbol }}) to {{ to_name }} ({{ to_symbol }})</h1>
+            {% if rate is not null %}
+                <p>1 {{ from_symbol }} = <strong>{{ rate|number_format(8)|trim('0')|trim('.') }} {{ to_symbol }}</strong> &ensp;·&ensp; Updated just now</p>
+            {% endif %}
+        </div>
+    </section>
+
+    <div class="container" style="padding-bottom:3rem">
+
+        {# ── Converter widget ── #}
+        <div class="converter-widget" data-rate="{{ rate }}" data-from="{{ from_symbol }}" data-to="{{ to_symbol }}">
+
+            {% if error %}
+                <div class="converter-error">{{ error }}</div>
+            {% else %}
+
+                <div class="converter-inputs">
+                    <div class="converter-field">
+                        <label for="converter-amount">Amount ({{ from_symbol }})</label>
+                        <input type="number"
+                               id="converter-amount"
+                               class="form-control converter-amount-input"
+                               value="{{ amount }}"
+                               min="0"
+                               step="any"
+                               placeholder="Enter amount">
+                    </div>
+                    <div class="converter-swap-col">
+                        <a href="/convert/{{ to }}-to-{{ from }}/{{ amount }}" class="converter-swap-btn" title="Swap currencies" aria-label="Swap currencies">⇄</a>
+                    </div>
+                    <div class="converter-field">
+                        <label for="converter-result">Result ({{ to_symbol }})</label>
+                        <input type="text"
+                               id="converter-result"
+                               class="form-control"
+                               value="{{ result is not null ? result|number_format(8)|trim('0')|trim('.') : '—' }}"
+                               readonly>
+                    </div>
+                </div>
+
+                <p class="converter-updated text-muted" style="font-size:.85rem;margin-top:.75rem">
+                    Exchange rate: 1 {{ from_symbol }} = <strong id="rate-display">{{ rate is not null ? rate|number_format(8)|trim('0')|trim('.') : '—' }}</strong> {{ to_symbol }}
+                    &ensp;·&ensp; Rates update every 60 seconds.
+                </p>
+
+            {% endif %}
+        </div>
+
+        {# ── Conversion tables ── #}
+        {% if rate is not null %}
+        <div class="converter-tables">
+
+            {# Forward table #}
+            <div class="converter-table-section">
+                <h2>{{ from_symbol }} to {{ to_symbol }} Conversion Table</h2>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>{{ from_symbol }} Amount</th>
+                            <th>{{ to_symbol }} Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in table %}
+                            <tr>
+                                <td>{{ row.amount }} {{ from_symbol }}</td>
+                                <td><strong>{{ row.result is not null ? row.result|number_format(8)|trim('0')|trim('.') : '—' }}</strong> {{ to_symbol }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {# Reverse table #}
+            <div class="converter-table-section">
+                <h2>{{ to_symbol }} to {{ from_symbol }} Conversion Table</h2>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>{{ to_symbol }} Amount</th>
+                            <th>{{ from_symbol }} Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in reverse_table %}
+                            <tr>
+                                <td>{{ row.amount }} {{ to_symbol }}</td>
+                                <td><strong>{{ row.result is not null ? row.result|number_format(8)|trim('0')|trim('.') : '—' }}</strong> {{ from_symbol }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+
+        {# ── FAQ ── #}
+        <section class="faq-section" style="margin-top:3rem">
+            <h2>Frequently Asked Questions</h2>
+
+            <div class="faq-item">
+                <h3>What is the current {{ from_symbol }} to {{ to_symbol }} exchange rate?</h3>
+                <p>1 {{ from_symbol }} is currently worth {{ rate|number_format(8)|trim('0')|trim('.') }} {{ to_symbol }}.
+                   This rate is sourced from CoinGecko and updates every 60 seconds.</p>
+            </div>
+
+            <div class="faq-item">
+                <h3>How to convert {{ from_name }} to {{ to_name }}?</h3>
+                <p>Enter the amount of {{ from_name }} ({{ from_symbol }}) you want to convert in the input field above.
+                   The converter will instantly calculate the equivalent in {{ to_name }} ({{ to_symbol }}) at the live exchange rate.</p>
+            </div>
+
+            <div class="faq-item">
+                <h3>How accurate is the {{ from_symbol }}/{{ to_symbol }} rate?</h3>
+                <p>Rates are sourced from CoinGecko, which aggregates data from hundreds of exchanges.
+                   The displayed rate is indicative — actual trading prices may vary slightly depending on the exchange and market conditions.</p>
+            </div>
+        </section>
+
+        {# ── Related conversions ── #}
+        <section style="margin-top:3rem">
+            <h2>Related Conversions</h2>
+            <div class="converter-related-links">
+                {% if from != 'btc' %}<a href="/convert/btc-to-{{ to }}">BTC to {{ to_symbol }}</a>{% endif %}
+                {% if from != 'eth' %}<a href="/convert/eth-to-{{ to }}">ETH to {{ to_symbol }}</a>{% endif %}
+                {% if to != 'usd' %}<a href="/convert/{{ from }}-to-usd">{{ from_symbol }} to USD</a>{% endif %}
+                {% if to != 'eur' %}<a href="/convert/{{ from }}-to-eur">{{ from_symbol }} to EUR</a>{% endif %}
+                {% if from != to %}<a href="/convert/{{ to }}-to-{{ from }}">{{ to_symbol }} to {{ from_symbol }}</a>{% endif %}
+                <a href="/tools/converter">All Converters</a>
+                {% if from_id %}<a href="/price/{{ from_id }}">{{ from_name }} Price</a>{% endif %}
+                {% if to_id %}<a href="/price/{{ to_id }}">{{ to_name }} Price</a>{% endif %}
+            </div>
+        </section>
+        {% endif %}
+
+    </div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+    (function() {
+        var widget = document.querySelector('.converter-widget');
+        if (!widget) return;
+        var rate = parseFloat(widget.dataset.rate);
+        if (!rate || isNaN(rate)) return;
+
+        var amountInput = document.getElementById('converter-amount');
+        var resultInput = document.getElementById('converter-result');
+        var rateDisplay = document.getElementById('rate-display');
+
+        function formatNumber(n) {
+            if (n === null || isNaN(n)) return '—';
+            if (n >= 1000000) return n.toLocaleString(undefined, {maximumFractionDigits: 2});
+            if (n >= 100)     return n.toLocaleString(undefined, {maximumFractionDigits: 2});
+            if (n >= 1)       return n.toLocaleString(undefined, {maximumFractionDigits: 4});
+            return n.toFixed(8).replace(/\.?0+$/, '');
+        }
+
+        if (amountInput && resultInput) {
+            amountInput.addEventListener('input', function() {
+                var amt = parseFloat(this.value);
+                resultInput.value = isNaN(amt) ? '—' : formatNumber(amt * rate);
+            });
+        }
+    })();
+    </script>
+{% endblock %}

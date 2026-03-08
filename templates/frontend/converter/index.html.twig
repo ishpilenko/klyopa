@@ -1,0 +1,87 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ meta_title ?? 'Crypto Currency Converter — ' ~ site.name }}{% endblock %}
+{% block og_title %}Crypto Currency Converter — {{ site.name }}{% endblock %}
+{% block og_description %}Convert between Bitcoin, Ethereum, and 100+ cryptocurrencies and fiat currencies. Free real-time rates.{% endblock %}
+
+{% block schema_markup %}
+    {{ schema_breadcrumb(breadcrumbs, app.request.schemeAndHttpHost) }}
+{% endblock %}
+
+{% block body %}
+    <section class="page-hero">
+        <div class="container">
+            {{ include('components/breadcrumb.html.twig', {items: breadcrumbs}) }}
+            <h1>Crypto Currency Converter</h1>
+            <p>Real-time exchange rates for 100+ cryptocurrencies and fiat currencies.</p>
+        </div>
+    </section>
+
+    <div class="container" style="padding-bottom:3rem">
+
+        {# ── Quick converter links ── #}
+        <div class="section-header">
+            <h2>Popular Conversions</h2>
+        </div>
+
+        <div class="converter-pairs-grid">
+            {% set popular = [
+                ['btc','usd','Bitcoin to USD'],
+                ['eth','usd','Ethereum to USD'],
+                ['btc','eth','Bitcoin to Ethereum'],
+                ['bnb','usd','BNB to USD'],
+                ['sol','usd','Solana to USD'],
+                ['xrp','usd','XRP to USD'],
+                ['ada','usd','Cardano to USD'],
+                ['doge','usd','Dogecoin to USD'],
+                ['btc','eur','Bitcoin to EUR'],
+                ['eth','eur','Ethereum to EUR'],
+                ['btc','gbp','Bitcoin to GBP'],
+                ['usdt','usd','USDT to USD'],
+            ] %}
+            {% for pair in popular %}
+                <a href="/convert/{{ pair[0] }}-to-{{ pair[1] }}" class="converter-pair-link">
+                    <span class="converter-pair-from">{{ pair[0]|upper }}</span>
+                    <span class="converter-arrow">→</span>
+                    <span class="converter-pair-to">{{ pair[1]|upper }}</span>
+                    <span class="converter-pair-label">{{ pair[2] }}</span>
+                </a>
+            {% endfor %}
+        </div>
+
+        {# ── Top coins quick links ── #}
+        {% if top_coins is not empty %}
+            <div class="section-header" style="margin-top:3rem">
+                <h2>Top Cryptocurrencies</h2>
+            </div>
+            <div class="converter-coins-grid">
+                {% for coin in top_coins %}
+                    <div class="converter-coin-card">
+                        {% if coin.image is defined %}
+                            <img src="{{ coin.image }}" alt="{{ coin.name }}" width="32" height="32" loading="lazy">
+                        {% endif %}
+                        <div class="converter-coin-info">
+                            <strong>{{ coin.name }}</strong>
+                            <span class="text-muted">{{ coin.symbol|upper }}</span>
+                        </div>
+                        <div class="converter-coin-links">
+                            <a href="/convert/{{ coin.symbol|lower }}-to-usd">→ USD</a>
+                            <a href="/convert/{{ coin.symbol|lower }}-to-eur">→ EUR</a>
+                            <a href="/price/{{ coin.id }}">Price</a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {# ── Info section ── #}
+        <div class="tool-info" style="margin-top:3rem">
+            <h2>How does the crypto converter work?</h2>
+            <p>
+                Our converter uses real-time price data from CoinGecko to calculate exchange rates
+                between cryptocurrencies and fiat currencies. Rates are updated every 60 seconds.
+                Cross-currency rates (e.g. BTC to ETH) are calculated via USD as the base currency.
+            </p>
+        </div>
+    </div>
+{% endblock %}

@@ -8,7 +8,9 @@
       "Bash(docker-compose run:*)",
       "Bash(grep:*)",
       "Bash(head:*)",
-      "Bash(docker-compose exec:*)"
+      "Bash(docker-compose exec:*)",
+      "Bash(grep < HTTP\\\\|<loc>:*)",
+      "Bash(grep <loc>:*)"
     ]
   }
 }

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+        <loc>{{ base_url }}/tools/converter</loc>
+        <changefreq>daily</changefreq>
+        <priority>0.8</priority>
+    </url>
+    {% for coin in top_coins %}
+        {% for fiat in fiats %}
+    <url>
+        <loc>{{ base_url }}/convert/{{ coin.symbol|lower }}-to-{{ fiat }}</loc>
+        <changefreq>hourly</changefreq>
+        <priority>0.7</priority>
+    </url>
+        {% endfor %}
+        {# Cross-crypto: coin to BTC and coin to ETH (skip self) #}
+        {% if coin.symbol|lower != 'btc' %}
+    <url>
+        <loc>{{ base_url }}/convert/{{ coin.symbol|lower }}-to-btc</loc>
+        <changefreq>hourly</changefreq>
+        <priority>0.6</priority>
+    </url>
+        {% endif %}
+        {% if coin.symbol|lower != 'eth' %}
+    <url>
+        <loc>{{ base_url }}/convert/{{ coin.symbol|lower }}-to-eth</loc>
+        <changefreq>hourly</changefreq>
+        <priority>0.6</priority>
+    </url>
+        {% endif %}
+    {% endfor %}
+</urlset>
