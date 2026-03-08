@@ -29,4 +29,5 @@ doctrine:
 when@test:
     doctrine:
         dbal:
-            dbname_suffix: '_test%env(default::TEST_TOKEN)%'
+            # Tests use the same dev DB (smoke tests, read-only, no fixtures)
+            dbname_suffix: ~
