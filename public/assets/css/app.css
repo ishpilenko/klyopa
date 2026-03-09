@@ -2292,16 +2292,45 @@ select.form-control { cursor: pointer; }
 /* ── Tools Shortcuts (horizontal scroll strip) ── */
 .tools-shortcuts { padding: var(--space-5) 0; border-bottom: 1px solid var(--color-border-light); }
 
+.tools-shortcuts-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
 .tools-shortcuts-grid {
     display: flex;
     gap: var(--space-3);
     overflow-x: auto;
     scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
-    padding-bottom: var(--space-2);
-    scrollbar-width: none;
+    padding-bottom: 6px;
+    flex: 1;
+    min-width: 0;                /* prevents flex item from overflowing parent */
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border) transparent;
 }
-.tools-shortcuts-grid::-webkit-scrollbar { display: none; }
+.tools-shortcuts-grid::-webkit-scrollbar        { height: 4px; }
+.tools-shortcuts-grid::-webkit-scrollbar-track  { background: transparent; }
+.tools-shortcuts-grid::-webkit-scrollbar-thumb  { background: var(--color-border); border-radius: 2px; }
+
+.tools-scroll-btn {
+    flex-shrink: 0;
+    width: 32px; height: 32px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-elevated);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--color-text-secondary);
+    transition: all var(--transition-fast);
+    padding: 0;
+}
+.tools-scroll-btn:hover { border-color: var(--color-primary); color: var(--color-primary); background: var(--color-accent-light); }
+.tools-scroll-btn[hidden] { display: none; }
+.tools-scroll-btn svg { width: 16px; height: 16px; }
 
 .tool-shortcut-card {
     display: flex;

@@ -63,4 +63,23 @@ document.addEventListener('DOMContentLoaded', () => {
             link.classList.add('active');
         }
     });
+
+    // Tools shortcuts — scroll arrow buttons
+    const grid = document.getElementById('tools-shortcuts-grid');
+    if (grid) {
+        const btnPrev = grid.closest('.tools-shortcuts-wrap')?.querySelector('.tools-scroll-btn--prev');
+        const btnNext = grid.closest('.tools-shortcuts-wrap')?.querySelector('.tools-scroll-btn--next');
+        const scrollStep = 280;
+
+        function updateButtons() {
+            if (!btnPrev || !btnNext) return;
+            btnPrev.hidden = grid.scrollLeft <= 4;
+            btnNext.hidden = grid.scrollLeft >= grid.scrollWidth - grid.clientWidth - 4;
+        }
+
+        if (btnPrev) btnPrev.addEventListener('click', () => { grid.scrollBy({ left: -scrollStep, behavior: 'smooth' }); });
+        if (btnNext) btnNext.addEventListener('click', () => { grid.scrollBy({ left:  scrollStep, behavior: 'smooth' }); });
+        grid.addEventListener('scroll', updateButtons, { passive: true });
+        updateButtons();
+    }
 });
