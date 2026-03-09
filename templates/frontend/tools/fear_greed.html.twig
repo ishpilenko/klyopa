@@ -4,7 +4,9 @@
 
 {% block body %}
 
-<div class="container" style="max-width:860px">
+<div class="container">
+<div class="layout">
+<div>
 
     {# Breadcrumbs #}
     <nav class="breadcrumb" aria-label="Breadcrumb">
@@ -156,6 +158,13 @@
         </ul>
     </div>
 
+</div>{# /main col #}
+
+<aside class="sidebar">
+    {{ include('components/crypto_sidebar.html.twig') }}
+    {{ include('components/sidebar.html.twig', {categories: categories}) }}
+</aside>
+</div>{# /layout #}
 </div>
 
 {# ── JSON-LD ─────────────────────────────────────────────────────── #}

@@ -18,6 +18,8 @@
     </section>
 
     <div class="container" style="padding-bottom:3rem">
+        <div class="layout">
+        <div>
 
         {# ── Quick converter links ── #}
         <div class="section-header">
@@ -83,5 +85,13 @@
                 Cross-currency rates (e.g. BTC to ETH) are calculated via USD as the base currency.
             </p>
         </div>
+
+        </div>{# /main col #}
+
+        <aside class="sidebar">
+            {{ include('components/crypto_sidebar.html.twig') }}
+            {{ include('components/sidebar.html.twig', {categories: categories}) }}
+        </aside>
+        </div>{# /layout #}
     </div>
 {% endblock %}

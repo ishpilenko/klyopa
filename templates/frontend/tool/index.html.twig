@@ -16,28 +16,37 @@
     </section>
 
     <div class="container" style="padding-bottom:3rem">
-        {% if tools is not empty %}
-            <div class="tools-grid">
-                {% for tool in tools %}
-                <a href="/tools/{{ tool.slug }}" class="tool-card-link">
-                    <div class="tool-card-mini">
-                        <div class="tool-type-badge tool-type-badge--{{ tool.type.value }}">
-                            {{ tool.type.value|capitalize }}
-                        </div>
-                        <h2>{{ tool.name }}</h2>
-                        {% if tool.description %}
-                            <p>{{ tool.description|slice(0, 120) }}{% if tool.description|length > 120 %}…{% endif %}</p>
-                        {% endif %}
-                        <span class="tool-cta">Use Tool →</span>
+        <div class="layout">
+            <div>
+                {% if tools is not empty %}
+                    <div class="tools-grid">
+                        {% for tool in tools %}
+                        <a href="/tools/{{ tool.slug }}" class="tool-card-link">
+                            <div class="tool-card-mini">
+                                <div class="tool-type-badge tool-type-badge--{{ tool.type.value }}">
+                                    {{ tool.type.value|capitalize }}
+                                </div>
+                                <h2>{{ tool.name }}</h2>
+                                {% if tool.description %}
+                                    <p>{{ tool.description|slice(0, 120) }}{% if tool.description|length > 120 %}…{% endif %}</p>
+                                {% endif %}
+                                <span class="tool-cta">Use Tool →</span>
+                            </div>
+                        </a>
+                        {% endfor %}
                     </div>
-                </a>
-                {% endfor %}
+                {% else %}
+                    <div class="empty-state">
+                        <h3>No tools available yet</h3>
+                        <p>Check back soon.</p>
+                    </div>
+                {% endif %}
             </div>
-        {% else %}
-            <div class="empty-state">
-                <h3>No tools available yet</h3>
-                <p>Check back soon.</p>
-            </div>
-        {% endif %}
+
+            <aside class="sidebar">
+                {{ include('components/crypto_sidebar.html.twig') }}
+                {{ include('components/sidebar.html.twig', {categories: categories}) }}
+            </aside>
+        </div>
     </div>
 {% endblock %}

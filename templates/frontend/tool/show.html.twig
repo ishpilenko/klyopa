@@ -132,15 +132,8 @@
 
             {# ── Sidebar ───────────────────────────────── #}
             <aside class="sidebar">
+                {{ include('components/crypto_sidebar.html.twig') }}
                 {{ include('components/sidebar.html.twig', {categories: categories}) }}
-
-                {# Related tools #}
-                <div class="sidebar-widget">
-                    <h3>More Tools</h3>
-                    <ul class="sidebar-links">
-                        <li><a href="/tools/">All Tools →</a></li>
-                    </ul>
-                </div>
             </aside>
         </div>
     </div>

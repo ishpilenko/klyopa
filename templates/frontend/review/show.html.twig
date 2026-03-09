@@ -95,6 +95,7 @@
         </article>
 
         <aside class="sidebar">
+            {{ include('components/crypto_sidebar.html.twig') }}
             <div class="sidebar-widget">
                 <h3>Exchange Reviews</h3>
                 <ul class="sidebar-links">
@@ -103,14 +104,6 @@
                     <li><a href="/reviews/kraken-review">Kraken</a></li>
                     <li><a href="/reviews/bybit-review">Bybit</a></li>
                     <li><a href="/reviews/okx-review">OKX</a></li>
-                </ul>
-            </div>
-            <div class="sidebar-widget">
-                <h3>Related Tools</h3>
-                <ul class="sidebar-links">
-                    <li><a href="/tools/crypto-profit-calculator">Profit Calculator</a></li>
-                    <li><a href="/tools/dca-calculator">DCA Calculator</a></li>
-                    <li><a href="/tools/gas-tracker">Gas Tracker</a></li>
                 </ul>
             </div>
             {{ include('components/sidebar.html.twig', {categories: categories}) }}

@@ -14,26 +14,35 @@
         </div>
     </section>
 
-    <div class="container tool-page-inner">
+    <div class="container" style="padding-bottom:3rem">
+        <div class="layout">
 
-        {# ── Calculator Widget ── #}
-        <div class="tool-widget" id="tool-widget" aria-live="polite">
-            {% block tool_widget %}{% endblock %}
+            <div class="tool-page-inner">
+                {# ── Calculator Widget ── #}
+                <div class="tool-widget" id="tool-widget" aria-live="polite">
+                    {% block tool_widget %}{% endblock %}
+                </div>
+
+                {# ── Educational content ── #}
+                <div class="tool-content">
+                    {% block tool_content %}{% endblock %}
+                </div>
+
+                {# ── FAQ ── #}
+                {% block tool_faq %}{% endblock %}
+
+                {# ── Related Tools ── #}
+                <div class="tool-related">
+                    {% block tool_related %}{% endblock %}
+                </div>
+            </div>
+
+            <aside class="sidebar">
+                {{ include('components/crypto_sidebar.html.twig') }}
+                {{ include('components/sidebar.html.twig', {categories: categories}) }}
+            </aside>
+
         </div>
-
-        {# ── Educational content ── #}
-        <div class="tool-content">
-            {% block tool_content %}{% endblock %}
-        </div>
-
-        {# ── FAQ ── #}
-        {% block tool_faq %}{% endblock %}
-
-        {# ── Related Tools ── #}
-        <div class="tool-related">
-            {% block tool_related %}{% endblock %}
-        </div>
-
     </div>
 
 </article>

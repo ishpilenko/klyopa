@@ -55,17 +55,7 @@
 
         {# ── Sidebar ───────────────────────────────────────── #}
         <aside class="sidebar">
-            <div class="sidebar-widget">
-                <h3>Quick Tools</h3>
-                <ul class="sidebar-links">
-                    <li><a href="/fear-greed-index">Fear & Greed Index</a></li>
-                    <li><a href="/tools/crypto-profit-calculator">Profit Calculator</a></li>
-                    <li><a href="/tools/dca-calculator">DCA Calculator</a></li>
-                    <li><a href="/tools/gas-tracker">Gas Tracker</a></li>
-                    <li><a href="/prices">Live Crypto Prices</a></li>
-                    <li><a href="/tools/converter">Crypto Converter</a></li>
-                </ul>
-            </div>
+            {{ include('components/crypto_sidebar.html.twig') }}
             {{ include('components/sidebar.html.twig', {categories: categories}) }}
         </aside>
 

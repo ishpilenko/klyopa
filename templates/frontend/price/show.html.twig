@@ -91,6 +91,8 @@
     </section>
 
     <div class="container" style="padding-bottom:3rem">
+        <div class="layout">
+        <div>
 
         {# ── 7-day sparkline chart (SVG) ── #}
         {% if chart_7d is not null and chart_7d|length > 1 %}
@@ -277,5 +279,12 @@
             <a href="/prices" class="text-muted" style="font-size:.9rem">← All Cryptocurrency Prices</a>
         </div>
 
+        </div>{# /main col #}
+
+        <aside class="sidebar">
+            {{ include('components/crypto_sidebar.html.twig') }}
+            {{ include('components/sidebar.html.twig', {categories: categories}) }}
+        </aside>
+        </div>{# /layout #}
     </div>
 {% endblock %}

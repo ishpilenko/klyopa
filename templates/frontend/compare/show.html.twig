@@ -68,6 +68,7 @@
         </article>
 
         <aside class="sidebar">
+            {{ include('components/crypto_sidebar.html.twig') }}
             <div class="sidebar-widget">
                 <h3>Quick Compare</h3>
                 <ul class="sidebar-links">
@@ -75,15 +76,6 @@
                     <li><a href="/compare/ethereum-vs-solana">ETH vs SOL</a></li>
                     <li><a href="/compare/bitcoin-vs-gold">BTC vs Gold</a></li>
                     <li><a href="/compare/dogecoin-vs-shiba-inu">DOGE vs SHIB</a></li>
-                </ul>
-            </div>
-            <div class="sidebar-widget">
-                <h3>Live Prices</h3>
-                <ul class="sidebar-links">
-                    <li><a href="/price/bitcoin">Bitcoin Price</a></li>
-                    <li><a href="/price/ethereum">Ethereum Price</a></li>
-                    <li><a href="/price/solana">Solana Price</a></li>
-                    <li><a href="/prices">All Prices</a></li>
                 </ul>
             </div>
             {{ include('components/sidebar.html.twig', {categories: categories}) }}

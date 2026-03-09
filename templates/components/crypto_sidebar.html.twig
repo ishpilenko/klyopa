@@ -1,0 +1,35 @@
+{#
+  Crypto Tools + Learn Crypto sidebar widgets.
+  Shown only on crypto vertical. Include this component in every sidebar.
+#}
+{% if site is defined and site.vertical is defined and site.vertical.value == 'crypto' %}
+
+<div class="sidebar-widget">
+    <h3>Crypto Tools</h3>
+    <ul class="sidebar-links">
+        <li><a href="/prices">Live Crypto Prices</a></li>
+        <li><a href="/fear-greed-index">Fear &amp; Greed Index</a></li>
+        <li><a href="/tools/converter">Crypto Converter</a></li>
+        <li><a href="/tools/crypto-profit-calculator">Profit Calculator</a></li>
+        <li><a href="/tools/dca-calculator">DCA Calculator</a></li>
+        <li><a href="/tools/mining-calculator">Mining Calculator</a></li>
+        <li><a href="/tools/gas-tracker">Gas Tracker</a></li>
+        <li><a href="/tools/investment-calculator/bitcoin">Investment Calculator</a></li>
+        <li><a href="/tools/">All Tools →</a></li>
+    </ul>
+</div>
+
+<div class="sidebar-widget">
+    <h3>Learn Crypto</h3>
+    <ul class="sidebar-links">
+        <li><a href="/glossary">Crypto Glossary A–Z</a></li>
+        <li><a href="/glossary/blockchain">What is Blockchain?</a></li>
+        <li><a href="/glossary/defi">What is DeFi?</a></li>
+        <li><a href="/glossary/staking">What is Staking?</a></li>
+        <li><a href="/glossary/smart-contract">What is a Smart Contract?</a></li>
+        <li><a href="/reviews/exchanges">Exchange Reviews</a></li>
+        <li><a href="/compare">Crypto Comparisons</a></li>
+    </ul>
+</div>
+
+{% endif %}

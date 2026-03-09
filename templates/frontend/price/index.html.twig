@@ -18,91 +18,98 @@
     </section>
 
     <div class="container" style="padding-bottom:3rem">
-
-        {% if coins is not empty %}
-            <div class="prices-table-wrap">
-                <table class="prices-table">
-                    <thead>
-                        <tr>
-                            <th class="col-rank">#</th>
-                            <th>Name</th>
-                            <th class="col-price">Price</th>
-                            <th class="col-change">24h %</th>
-                            <th class="col-mcap hide-mobile">Market Cap</th>
-                            <th class="col-volume hide-mobile">24h Volume</th>
-                            <th class="col-actions hide-mobile"></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for coin in coins %}
-                            {% set change = coin.price_change_percentage_24h ?? 0 %}
-                            <tr>
-                                <td class="col-rank text-muted">{{ coin.market_cap_rank ?? loop.index }}</td>
-                                <td class="coin-name-cell">
-                                    {% if coin.image is defined %}
-                                        <img src="{{ coin.image }}" alt="{{ coin.name }}" width="24" height="24" loading="lazy" class="coin-thumb">
-                                    {% endif %}
-                                    <div>
-                                        <a href="/price/{{ coin.id }}" class="coin-name-link">{{ coin.name }}</a>
-                                        <span class="coin-symbol text-muted">{{ coin.symbol|upper }}</span>
-                                    </div>
-                                </td>
-                                <td class="col-price price-cell">
-                                    {% if coin.current_price is defined and coin.current_price %}
-                                        {% if coin.current_price >= 1 %}
-                                            ${{ coin.current_price|number_format(2) }}
-                                        {% else %}
-                                            ${{ coin.current_price|number_format(6)|trim('0')|trim('.') }}
-                                        {% endif %}
-                                    {% else %}
-                                        <span class="text-muted">N/A</span>
-                                    {% endif %}
-                                </td>
-                                <td class="col-change">
-                                    <span class="price-change {{ change >= 0 ? 'price-up' : 'price-down' }}">
-                                        {{ change >= 0 ? '+' : '' }}{{ change|number_format(2) }}%
-                                    </span>
-                                </td>
-                                <td class="col-mcap hide-mobile text-muted">
-                                    {% if coin.market_cap is defined and coin.market_cap %}
-                                        {% if coin.market_cap >= 1000000000 %}
-                                            ${{ (coin.market_cap / 1000000000)|number_format(2) }}B
-                                        {% elseif coin.market_cap >= 1000000 %}
-                                            ${{ (coin.market_cap / 1000000)|number_format(1) }}M
-                                        {% else %}
-                                            ${{ coin.market_cap|number_format(0) }}
-                                        {% endif %}
-                                    {% else %}
-                                        —
-                                    {% endif %}
-                                </td>
-                                <td class="col-volume hide-mobile text-muted">
-                                    {% if coin.total_volume is defined and coin.total_volume %}
-                                        {% if coin.total_volume >= 1000000000 %}
-                                            ${{ (coin.total_volume / 1000000000)|number_format(2) }}B
-                                        {% elseif coin.total_volume >= 1000000 %}
-                                            ${{ (coin.total_volume / 1000000)|number_format(1) }}M
-                                        {% else %}
-                                            ${{ coin.total_volume|number_format(0) }}
-                                        {% endif %}
-                                    {% else %}
-                                        —
-                                    {% endif %}
-                                </td>
-                                <td class="col-actions hide-mobile">
-                                    <a href="/convert/{{ coin.symbol|lower }}-to-usd" class="btn-convert-mini">Convert</a>
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+        <div class="layout">
+            <div>
+                {% if coins is not empty %}
+                    <div class="prices-table-wrap">
+                        <table class="prices-table">
+                            <thead>
+                                <tr>
+                                    <th class="col-rank">#</th>
+                                    <th>Name</th>
+                                    <th class="col-price">Price</th>
+                                    <th class="col-change">24h %</th>
+                                    <th class="col-mcap hide-mobile">Market Cap</th>
+                                    <th class="col-volume hide-mobile">24h Volume</th>
+                                    <th class="col-actions hide-mobile"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for coin in coins %}
+                                    {% set change = coin.price_change_percentage_24h ?? 0 %}
+                                    <tr>
+                                        <td class="col-rank text-muted">{{ coin.market_cap_rank ?? loop.index }}</td>
+                                        <td class="coin-name-cell">
+                                            {% if coin.image is defined %}
+                                                <img src="{{ coin.image }}" alt="{{ coin.name }}" width="24" height="24" loading="lazy" class="coin-thumb">
+                                            {% endif %}
+                                            <div>
+                                                <a href="/price/{{ coin.id }}" class="coin-name-link">{{ coin.name }}</a>
+                                                <span class="coin-symbol text-muted">{{ coin.symbol|upper }}</span>
+                                            </div>
+                                        </td>
+                                        <td class="col-price price-cell">
+                                            {% if coin.current_price is defined and coin.current_price %}
+                                                {% if coin.current_price >= 1 %}
+                                                    ${{ coin.current_price|number_format(2) }}
+                                                {% else %}
+                                                    ${{ coin.current_price|number_format(6)|trim('0')|trim('.') }}
+                                                {% endif %}
+                                            {% else %}
+                                                <span class="text-muted">N/A</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="col-change">
+                                            <span class="price-change {{ change >= 0 ? 'price-up' : 'price-down' }}">
+                                                {{ change >= 0 ? '+' : '' }}{{ change|number_format(2) }}%
+                                            </span>
+                                        </td>
+                                        <td class="col-mcap hide-mobile text-muted">
+                                            {% if coin.market_cap is defined and coin.market_cap %}
+                                                {% if coin.market_cap >= 1000000000 %}
+                                                    ${{ (coin.market_cap / 1000000000)|number_format(2) }}B
+                                                {% elseif coin.market_cap >= 1000000 %}
+                                                    ${{ (coin.market_cap / 1000000)|number_format(1) }}M
+                                                {% else %}
+                                                    ${{ coin.market_cap|number_format(0) }}
+                                                {% endif %}
+                                            {% else %}
+                                                —
+                                            {% endif %}
+                                        </td>
+                                        <td class="col-volume hide-mobile text-muted">
+                                            {% if coin.total_volume is defined and coin.total_volume %}
+                                                {% if coin.total_volume >= 1000000000 %}
+                                                    ${{ (coin.total_volume / 1000000000)|number_format(2) }}B
+                                                {% elseif coin.total_volume >= 1000000 %}
+                                                    ${{ (coin.total_volume / 1000000)|number_format(1) }}M
+                                                {% else %}
+                                                    ${{ coin.total_volume|number_format(0) }}
+                                                {% endif %}
+                                            {% else %}
+                                                —
+                                            {% endif %}
+                                        </td>
+                                        <td class="col-actions hide-mobile">
+                                            <a href="/convert/{{ coin.symbol|lower }}-to-usd" class="btn-convert-mini">Convert</a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <h3>Price data unavailable</h3>
+                        <p>Unable to fetch live market data. Please try again later.</p>
+                    </div>
+                {% endif %}
             </div>
-        {% else %}
-            <div class="empty-state">
-                <h3>Price data unavailable</h3>
-                <p>Unable to fetch live market data. Please try again later.</p>
-            </div>
-        {% endif %}
 
+            <aside class="sidebar">
+                {{ include('components/crypto_sidebar.html.twig') }}
+                {{ include('components/sidebar.html.twig', {categories: categories}) }}
+            </aside>
+        </div>
     </div>
 {% endblock %}
