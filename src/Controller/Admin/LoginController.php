@@ -24,6 +24,12 @@ class LoginController extends AbstractController
         ]);
     }
 
+    #[Route('/admin/login_check', name: 'admin_login_check', methods: ['POST'])]
+    public function loginCheck(): never
+    {
+        throw new \LogicException('This route is intercepted by the security firewall.');
+    }
+
     #[Route('/admin/logout', name: 'admin_logout', methods: ['GET'])]
     public function logout(): never
     {
