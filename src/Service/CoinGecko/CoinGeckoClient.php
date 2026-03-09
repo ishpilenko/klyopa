@@ -309,7 +309,10 @@ class CoinGeckoClient
             $response = $this->httpClient->request('GET', self::BASE_URL . $path, [
                 'query'   => $query,
                 'timeout' => self::TIMEOUT,
-                'headers' => ['Accept' => 'application/json'],
+                'headers' => [
+                    'Accept'     => 'application/json',
+                    'User-Agent' => 'Mozilla/5.0 (compatible; CryptoSiteBot/1.0)',
+                ],
             ]);
 
             if ($response->getStatusCode() !== 200) {
