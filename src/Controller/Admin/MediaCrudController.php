@@ -45,7 +45,7 @@ class MediaCrudController extends AbstractCrudController
     public function configureActions(Actions $actions): Actions
     {
         $uploadAction = Action::new('uploadMedia', 'Upload Image', 'fa fa-cloud-upload')
-            ->linkToRoute('admin_media_upload')
+            ->linkToRoute('admin_upload_media')
             ->createAsGlobalAction()
             ->setCssClass('btn btn-success');
 

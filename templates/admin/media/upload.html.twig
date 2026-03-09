@@ -120,7 +120,7 @@
     {% endfor %}
 
     <div class="card">
-        <form method="post" enctype="multipart/form-data" action="{{ path('admin_media_upload') }}">
+        <form method="post" enctype="multipart/form-data" action="{{ path('admin_upload_media') }}">
             <input type="hidden" name="_token" value="{{ csrf_token('media_upload') }}">
 
             <div class="drop-zone" id="drop-zone">
