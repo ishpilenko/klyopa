@@ -1,141 +1,227 @@
-{% extends '@EasyAdmin/page/content.html.twig' %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Upload Media — Admin</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-{% block page_title %}Upload Media{% endblock %}
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: #f3f4f6;
+            color: #1f2937;
+            min-height: 100vh;
+            padding: 2rem 1rem;
+        }
 
-{% block main %}
+        .page-wrap { max-width: 680px; margin: 0 auto; }
 
-{% for label, messages in app.flashes %}
-    {% for message in messages %}
-        <div class="alert alert-{{ label == 'success' ? 'success' : (label == 'warning' ? 'warning' : 'danger') }}"
-             style="padding:.75rem 1rem;border-radius:6px;margin-bottom:1rem;
-                    background:{{ label == 'success' ? '#d1fae5' : (label == 'warning' ? '#fef3c7' : '#fee2e2') }};
-                    color:{{ label == 'success' ? '#065f46' : (label == 'warning' ? '#92400e' : '#991b1b') }};
-                    border:1px solid {{ label == 'success' ? '#a7f3d0' : (label == 'warning' ? '#fde68a' : '#fecaca') }}">
-            {{ message }}
-        </div>
+        .page-header {
+            display: flex;
+            align-items: baseline;
+            gap: .75rem;
+            margin-bottom: 1.75rem;
+        }
+        .page-header h1 { font-size: 1.375rem; font-weight: 700; }
+        .page-header a { color: #6b7280; font-size: .875rem; text-decoration: none; }
+        .page-header a:hover { color: #374151; }
+
+        .card {
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 1px 6px rgba(0,0,0,.08);
+            padding: 2rem;
+        }
+
+        .alert { border-radius: 6px; padding: .75rem 1rem; margin-bottom: 1rem; font-size: .875rem; }
+        .alert-danger  { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+        .alert-warning { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+        .alert-success { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+
+        .drop-zone {
+            border: 2px dashed #d1d5db;
+            border-radius: 8px;
+            padding: 2.5rem 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color .15s, background .15s;
+            background: #fafafa;
+            margin-bottom: 1.5rem;
+        }
+        .drop-zone:hover, .drop-zone.drag-over { border-color: #6366f1; background: #eef2ff; }
+        .drop-zone .icon { font-size: 2.5rem; margin-bottom: .75rem; }
+        .drop-zone p { margin: 0; font-size: .9rem; color: #4b5563; }
+        .drop-zone .link { color: #6366f1; text-decoration: underline; cursor: pointer; }
+
+        #preview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+            gap: .625rem;
+            margin-bottom: 1.5rem;
+        }
+        .preview-item {
+            aspect-ratio: 1;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            overflow: hidden;
+            position: relative;
+            background: #f3f4f6;
+        }
+        .preview-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .preview-item .size-label {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            background: rgba(0,0,0,.5); color: #fff;
+            font-size: .6rem; text-align: center; padding: .1rem;
+        }
+
+        .form-group { margin-bottom: 1.25rem; }
+        label { display: block; font-size: .875rem; font-weight: 500; margin-bottom: .375rem; }
+        label .hint { font-weight: 400; color: #9ca3af; }
+
+        input[type="text"], select {
+            width: 100%; padding: .625rem .875rem;
+            border: 1px solid #d1d5db; border-radius: 6px;
+            font-size: .9375rem; outline: none; background: #fff;
+        }
+        input[type="text"]:focus, select:focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99,102,241,.15);
+        }
+
+        .actions { display: flex; align-items: center; gap: 1.25rem; margin-top: 1.5rem; }
+        .btn-primary {
+            padding: .65rem 1.5rem;
+            background: #6366f1; color: #fff;
+            border: none; border-radius: 6px;
+            font-weight: 600; font-size: .9375rem; cursor: pointer;
+        }
+        .btn-primary:hover { background: #4f46e5; }
+        .btn-back { font-size: .9rem; color: #6b7280; text-decoration: none; }
+        .btn-back:hover { color: #374151; }
+    </style>
+</head>
+<body>
+<div class="page-wrap">
+
+    <div class="page-header">
+        <a href="{{ path('admin', {'crudAction': 'index', 'crudControllerFqcn': 'App\\Controller\\Admin\\MediaCrudController'}) }}">← Media list</a>
+        <h1>Upload Image</h1>
+    </div>
+
+    {% for flash_type, messages in app.flashes %}
+        {% for message in messages %}
+            <div class="alert alert-{{ flash_type }}">{{ message }}</div>
+        {% endfor %}
     {% endfor %}
-{% endfor %}
 
-<div style="max-width:600px">
+    {% for error in errors %}
+        <div class="alert alert-danger">{{ error }}</div>
+    {% endfor %}
 
-    <form method="post"
-          enctype="multipart/form-data"
-          action="{{ ea_url().setController('App\\Controller\\Admin\\MediaCrudController').setAction('uploadPage').generateUrl() }}"
-          id="upload-form">
+    <div class="card">
+        <form method="post" enctype="multipart/form-data" action="{{ path('admin_media_upload') }}">
+            <input type="hidden" name="_token" value="{{ csrf_token('media_upload') }}">
 
-        <input type="hidden" name="_token" value="{{ csrf_token('media_upload') }}">
+            <div class="drop-zone" id="drop-zone">
+                <div class="icon">🖼️</div>
+                <p><strong>Drop images here</strong> or <span class="link" id="browse-link">browse files</span></p>
+                <p style="margin-top:.375rem;font-size:.8rem;color:#9ca3af">
+                    JPEG, PNG, GIF, WebP, SVG &mdash; max 10 MB each &mdash; multiple files allowed
+                </p>
+                <input type="file" id="file-input" name="files[]" accept="image/*" multiple style="display:none">
+            </div>
 
-        {# Drop zone #}
-        <div id="drop-zone"
-             style="border:2px dashed #d1d5db;border-radius:8px;padding:2.5rem 1.5rem;
-                    text-align:center;cursor:pointer;transition:border-color .2s,background .2s;
-                    background:#fafafa;margin-bottom:1.5rem">
-            <div style="font-size:2.5rem;line-height:1;margin-bottom:.75rem">🖼️</div>
-            <p style="margin:0 0 .5rem;font-weight:600;font-size:1rem">
-                Drop images here or <label for="file-input" style="color:#6366f1;cursor:pointer;text-decoration:underline">browse files</label>
-            </p>
-            <p style="margin:0;font-size:.85rem;color:#6b7280">
-                JPEG, PNG, GIF, WebP, SVG &mdash; max 10 MB each. Multiple files allowed.
-            </p>
-            <input type="file"
-                   id="file-input"
-                   name="files[]"
-                   accept="image/*"
-                   multiple
-                   style="display:none">
-        </div>
+            <div id="preview-grid"></div>
 
-        {# Preview grid #}
-        <div id="preview-grid"
-             style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:.75rem;margin-bottom:1.25rem"></div>
+            {% if sites is not empty %}
+                <div class="form-group">
+                    <label for="site_id">Site</label>
+                    <select id="site_id" name="site_id" required>
+                        <option value="">— select site —</option>
+                        {% for s in sites %}
+                            <option value="{{ s.id }}"
+                                {% if site and site.id == s.id %}selected{% endif %}>
+                                {{ s.name }} ({{ s.domain }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            {% elseif site %}
+                <p style="font-size:.85rem;color:#6b7280;margin-bottom:1.25rem">
+                    Uploading to: <strong>{{ site.name }}</strong>
+                </p>
+            {% endif %}
 
-        {# Alt text #}
-        <div style="margin-bottom:1.25rem">
-            <label for="alt_text" style="display:block;font-weight:500;font-size:.875rem;margin-bottom:.375rem">
-                Alt Text <span style="color:#9ca3af;font-weight:400">(optional, applies to all uploaded files)</span>
-            </label>
-            <input type="text"
-                   id="alt_text"
-                   name="alt_text"
-                   placeholder="Describe the image…"
-                   style="width:100%;padding:.625rem .875rem;border:1px solid #d1d5db;border-radius:6px;font-size:.9375rem">
-        </div>
+            <div class="form-group">
+                <label for="alt_text">
+                    Alt Text <span class="hint">(optional — applies to all files in this upload)</span>
+                </label>
+                <input type="text" id="alt_text" name="alt_text"
+                       placeholder="Describe the image…"
+                       value="{{ app.request.request.get('alt_text', '') }}">
+            </div>
 
-        <div style="display:flex;gap:1rem;align-items:center">
-            <button type="submit"
-                    id="submit-btn"
-                    style="padding:.625rem 1.5rem;background:#6366f1;color:#fff;border:none;
-                           border-radius:6px;font-weight:600;cursor:pointer;font-size:.9375rem">
-                Upload
-            </button>
-            <a href="{{ ea_url().setController('App\\Controller\\Admin\\MediaCrudController').setAction('index').generateUrl() }}"
-               style="font-size:.9rem;color:#6b7280">
-                ← Back to Media list
-            </a>
-        </div>
-
-    </form>
+            <div class="actions">
+                <button type="submit" class="btn-primary">Upload</button>
+                <a href="{{ path('admin', {'crudAction': 'index', 'crudControllerFqcn': 'App\\Controller\\Admin\\MediaCrudController'}) }}"
+                   class="btn-back">Cancel</a>
+            </div>
+        </form>
+    </div>
 
 </div>
-
 <script>
 (function () {
-    var dropZone   = document.getElementById('drop-zone');
-    var fileInput  = document.getElementById('file-input');
+    var dropZone    = document.getElementById('drop-zone');
+    var fileInput   = document.getElementById('file-input');
+    var browseLink  = document.getElementById('browse-link');
     var previewGrid = document.getElementById('preview-grid');
 
-    function showPreviews(files) {
+    browseLink.addEventListener('click', function (e) { e.stopPropagation(); fileInput.click(); });
+    dropZone.addEventListener('click', function (e) {
+        if (e.target !== browseLink) fileInput.click();
+    });
+    fileInput.addEventListener('change', function () { renderPreviews(this.files); });
+
+    dropZone.addEventListener('dragover', function (e) {
+        e.preventDefault(); dropZone.classList.add('drag-over');
+    });
+    ['dragleave', 'dragend'].forEach(function (ev) {
+        dropZone.addEventListener(ev, function () { dropZone.classList.remove('drag-over'); });
+    });
+    dropZone.addEventListener('drop', function (e) {
+        e.preventDefault(); dropZone.classList.remove('drag-over');
+        if (e.dataTransfer.files.length) {
+            fileInput.files = e.dataTransfer.files;
+            renderPreviews(e.dataTransfer.files);
+        }
+    });
+
+    function renderPreviews(files) {
         previewGrid.innerHTML = '';
         Array.from(files).forEach(function (f) {
             var wrap = document.createElement('div');
-            wrap.style.cssText = 'border:1px solid #e5e7eb;border-radius:6px;overflow:hidden;position:relative;aspect-ratio:1;background:#f3f4f6;display:flex;align-items:center;justify-content:center;';
+            wrap.className = 'preview-item';
             if (f.type.startsWith('image/')) {
                 var img = document.createElement('img');
                 img.src = URL.createObjectURL(f);
-                img.style.cssText = 'width:100%;height:100%;object-fit:cover;';
                 img.onload = function () { URL.revokeObjectURL(img.src); };
                 wrap.appendChild(img);
             } else {
+                wrap.style.cssText += ';display:flex;align-items:center;justify-content:center;padding:.25rem;font-size:.65rem;word-break:break-all;text-align:center';
                 wrap.textContent = f.name;
-                wrap.style.fontSize = '.7rem';
-                wrap.style.padding = '.25rem';
-                wrap.style.wordBreak = 'break-all';
             }
-            var label = document.createElement('div');
-            label.textContent = Math.round(f.size / 1024) + ' KB';
-            label.style.cssText = 'position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.5);color:#fff;font-size:.65rem;text-align:center;padding:.15rem';
-            wrap.appendChild(label);
+            var lbl = document.createElement('div');
+            lbl.className = 'size-label';
+            lbl.textContent = f.size >= 1048576
+                ? (f.size / 1048576).toFixed(1) + ' MB'
+                : Math.round(f.size / 1024) + ' KB';
+            wrap.appendChild(lbl);
             previewGrid.appendChild(wrap);
         });
     }
-
-    fileInput.addEventListener('change', function () {
-        showPreviews(this.files);
-    });
-
-    dropZone.addEventListener('dragover', function (e) {
-        e.preventDefault();
-        dropZone.style.borderColor = '#6366f1';
-        dropZone.style.background  = '#eef2ff';
-    });
-    dropZone.addEventListener('dragleave', function () {
-        dropZone.style.borderColor = '#d1d5db';
-        dropZone.style.background  = '#fafafa';
-    });
-    dropZone.addEventListener('drop', function (e) {
-        e.preventDefault();
-        dropZone.style.borderColor = '#d1d5db';
-        dropZone.style.background  = '#fafafa';
-        fileInput.files = e.dataTransfer.files;
-        showPreviews(e.dataTransfer.files);
-    });
-
-    dropZone.addEventListener('click', function (e) {
-        if (e.target !== document.getElementById('file-input') && e.target.tagName !== 'LABEL') {
-            fileInput.click();
-        }
-    });
 })();
 </script>
-
-{% endblock %}
+</body>
+</html>

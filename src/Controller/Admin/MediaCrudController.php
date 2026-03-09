@@ -11,7 +11,6 @@ use Doctrine\ORM\EntityManagerInterface;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
-use EasyCorp\Bundle\EasyAdminBundle\Context\AdminContext;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
 use EasyCorp\Bundle\EasyAdminBundle\Field\AssociationField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\DateTimeField;
@@ -19,14 +18,12 @@ use EasyCorp\Bundle\EasyAdminBundle\Field\IdField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\ImageField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IntegerField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
-use Symfony\Component\HttpFoundation\Response;
 
 class MediaCrudController extends AbstractCrudController
 {
     public function __construct(
         private readonly MediaManager $mediaManager,
         private readonly EntityManagerInterface $em,
-        private readonly SiteContext $siteContext,
     ) {
     }
 
@@ -47,8 +44,8 @@ class MediaCrudController extends AbstractCrudController
 
     public function configureActions(Actions $actions): Actions
     {
-        $uploadAction = Action::new('uploadPage', 'Upload Image', 'fa fa-cloud-upload')
-            ->linkToCrudAction('uploadPage')
+        $uploadAction = Action::new('uploadMedia', 'Upload Image', 'fa fa-cloud-upload')
+            ->linkToRoute('admin_media_upload')
             ->createAsGlobalAction()
             ->setCssClass('btn btn-success');
 
@@ -76,62 +73,4 @@ class MediaCrudController extends AbstractCrudController
         yield DateTimeField::new('createdAt')->hideOnForm()->onlyOnDetail();
     }
 
-    /**
-     * Custom action: renders the upload form and handles file upload.
-     */
-    public function uploadPage(AdminContext $adminContext): Response
-    {
-        $request = $adminContext->getRequest();
-
-        if ($request->isMethod('POST')) {
-            $submittedToken = $request->request->get('_token');
-
-            if (!$this->isCsrfTokenValid('media_upload', $submittedToken)) {
-                $this->addFlash('danger', 'Invalid CSRF token. Please try again.');
-
-                return $this->redirectToRoute('admin', [
-                    'crudAction'          => 'uploadPage',
-                    'crudControllerFqcn'  => self::class,
-                ]);
-            }
-
-            /** @var \Symfony\Component\HttpFoundation\File\UploadedFile[] $files */
-            $files   = $request->files->all()['files'] ?? [];
-            $altText = trim((string) $request->request->get('alt_text', ''));
-
-            if (empty($files)) {
-                $this->addFlash('warning', 'Please select at least one file to upload.');
-            } else {
-                $uploaded = 0;
-                $errors   = [];
-
-                foreach ($files as $file) {
-                    try {
-                        $this->mediaManager->upload($file, $this->siteContext->getSite(), $altText ?: null);
-                        ++$uploaded;
-                    } catch (\InvalidArgumentException|\RuntimeException $e) {
-                        $errors[] = $file->getClientOriginalName() . ': ' . $e->getMessage();
-                    }
-                }
-
-                $this->em->flush();
-
-                if ($uploaded > 0) {
-                    $this->addFlash('success', sprintf('%d file(s) uploaded successfully.', $uploaded));
-                }
-                foreach ($errors as $error) {
-                    $this->addFlash('danger', $error);
-                }
-
-                return $this->redirectToRoute('admin', [
-                    'crudAction'         => 'index',
-                    'crudControllerFqcn' => self::class,
-                ]);
-            }
-        }
-
-        return $this->render('admin/media/upload.html.twig', [
-            'site' => $this->siteContext->getSite(),
-        ]);
-    }
 }
