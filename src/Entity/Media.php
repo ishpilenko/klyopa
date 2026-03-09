@@ -150,4 +150,58 @@ class Media implements SiteAwareInterface
     {
         return '/uploads/' . $this->path;
     }
+
+    /**
+     * Path to the thumb variant (400×225). Falls back to main path for SVG or legacy files.
+     */
+    public function getThumbPath(): string
+    {
+        if (str_ends_with($this->path, '.svg')) {
+            return $this->path;
+        }
+
+        return substr($this->path, 0, -5) . '-sm.webp';
+    }
+
+    /**
+     * Path to the medium variant (800×450). Falls back to main path for SVG or legacy files.
+     */
+    public function getMediumPath(): string
+    {
+        if (str_ends_with($this->path, '.svg')) {
+            return $this->path;
+        }
+
+        return substr($this->path, 0, -5) . '-md.webp';
+    }
+
+    /** /uploads/ URL for the thumb variant. */
+    public function getThumbUrl(): string
+    {
+        return '/uploads/' . $this->getThumbPath();
+    }
+
+    /** /uploads/ URL for the medium variant. */
+    public function getMediumUrl(): string
+    {
+        return '/uploads/' . $this->getMediumPath();
+    }
+
+    /**
+     * Returns a ready-to-use `srcset` attribute value.
+     * SVGs return a single entry (vector, no variants needed).
+     */
+    public function getSrcset(): string
+    {
+        if (str_ends_with($this->path, '.svg')) {
+            return $this->getPublicUrl();
+        }
+
+        return sprintf(
+            '%s 1200w, %s 800w, %s 400w',
+            $this->getPublicUrl(),
+            $this->getMediumUrl(),
+            $this->getThumbUrl(),
+        );
+    }
 }

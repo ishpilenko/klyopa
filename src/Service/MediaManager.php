@@ -21,8 +21,15 @@ class MediaManager
 
     private const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 
-    private const THUMB_WIDTH = 800;
-    private const THUMB_HEIGHT = 600;
+    /**
+     * Variant sizes: suffix => [maxWidth, maxHeight].
+     * Empty suffix = large (stored as the main `path`).
+     */
+    private const SIZES = [
+        ''   => [1200, 675],  // large  — stored in media.path
+        'md' => [800,  450],  // medium
+        'sm' => [400,  225],  // thumb
+    ];
 
     public function __construct(
         private readonly EntityManagerInterface $em,
@@ -40,20 +47,30 @@ class MediaManager
         }
 
         $originalFilename = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
-        $safeFilename = preg_replace('/[^a-z0-9-]/', '-', strtolower($originalFilename));
-        $newFilename = $safeFilename . '-' . uniqid() . '.webp';
+        $safeFilename     = preg_replace('/[^a-z0-9-]/', '-', strtolower($originalFilename));
+        $baseFilename     = $safeFilename . '-' . uniqid();
+        $mimeType         = $file->getMimeType() ?? 'image/jpeg';
 
-        $mimeType = $file->getMimeType() ?? 'image/jpeg';
-
-        // Convert to WebP if it's an image (not SVG)
-        if ('image/svg+xml' !== $mimeType) {
-            $this->convertToWebP($file->getPathname(), $siteUploadDir . '/' . $newFilename);
+        if ('image/svg+xml' === $mimeType) {
+            // SVGs stay as-is — no rasterisation
+            $newFilename = $baseFilename . '.svg';
+            $file->move($siteUploadDir, $newFilename);
         } else {
-            $file->move($siteUploadDir, $newFilename = $safeFilename . '-' . uniqid() . '.svg');
+            // Generate large, medium and thumb variants
+            foreach (self::SIZES as $suffix => [$maxW, $maxH]) {
+                $variantFilename = $baseFilename . ($suffix ? '-' . $suffix : '') . '.webp';
+                $this->resizeAndSave(
+                    $file->getPathname(),
+                    $siteUploadDir . '/' . $variantFilename,
+                    $maxW,
+                    $maxH,
+                );
+            }
+            $newFilename = $baseFilename . '.webp'; // large = canonical path
         }
 
         $relativePath = $site->getId() . '/' . $newFilename;
-        $fullPath = $siteUploadDir . '/' . $newFilename;
+        $fullPath     = $siteUploadDir . '/' . $newFilename;
 
         $media = (new Media())
             ->setSite($site)
@@ -72,28 +89,48 @@ class MediaManager
     public function delete(Media $media): void
     {
         $fullPath = $this->uploadsDir . '/' . $media->getPath();
-        if (file_exists($fullPath)) {
-            unlink($fullPath);
+
+        if (str_ends_with($fullPath, '.svg')) {
+            if (file_exists($fullPath)) {
+                unlink($fullPath);
+            }
+        } else {
+            // Remove all WebP variants
+            $base = preg_replace('/\.webp$/', '', $fullPath);
+            foreach (array_keys(self::SIZES) as $suffix) {
+                $variantPath = $base . ($suffix ? '-' . $suffix : '') . '.webp';
+                if (file_exists($variantPath)) {
+                    unlink($variantPath);
+                }
+            }
         }
+
         $this->em->remove($media);
     }
 
     private function validate(UploadedFile $file): void
     {
         if (!in_array($file->getMimeType(), self::ALLOWED_MIME_TYPES, true)) {
-            throw new \InvalidArgumentException(
-                sprintf('File type "%s" is not allowed. Allowed: %s', $file->getMimeType(), implode(', ', self::ALLOWED_MIME_TYPES))
-            );
+            throw new \InvalidArgumentException(sprintf(
+                'File type "%s" is not allowed. Allowed: %s',
+                $file->getMimeType(),
+                implode(', ', self::ALLOWED_MIME_TYPES),
+            ));
         }
 
         if ($file->getSize() > self::MAX_FILE_SIZE) {
-            throw new \InvalidArgumentException(
-                sprintf('File size %s exceeds the maximum allowed size of %s.', $this->formatBytes($file->getSize()), $this->formatBytes(self::MAX_FILE_SIZE))
-            );
+            throw new \InvalidArgumentException(sprintf(
+                'File size %s exceeds the maximum allowed size of %s.',
+                $this->formatBytes($file->getSize()),
+                $this->formatBytes(self::MAX_FILE_SIZE),
+            ));
         }
     }
 
-    private function convertToWebP(string $sourcePath, string $destPath): void
+    /**
+     * Load an image, scale it to fit within maxW×maxH (never upscale), save as WebP.
+     */
+    private function resizeAndSave(string $sourcePath, string $destPath, int $maxW, int $maxH): void
     {
         $imageInfo = @getimagesize($sourcePath);
         if (false === $imageInfo) {
@@ -105,29 +142,28 @@ class MediaManager
             IMAGETYPE_PNG  => imagecreatefrompng($sourcePath),
             IMAGETYPE_GIF  => imagecreatefromgif($sourcePath),
             IMAGETYPE_WEBP => imagecreatefromwebp($sourcePath),
-            default => throw new \RuntimeException('Unsupported image type.'),
+            default        => throw new \RuntimeException('Unsupported image type.'),
         };
 
         if (false === $image) {
             throw new \RuntimeException('Cannot create image from file.');
         }
 
-        // Resize if too large
-        $origWidth = imagesx($image);
-        $origHeight = imagesy($image);
+        $origW = imagesx($image);
+        $origH = imagesy($image);
 
-        if ($origWidth > self::THUMB_WIDTH || $origHeight > self::THUMB_HEIGHT) {
-            $ratio = min(self::THUMB_WIDTH / $origWidth, self::THUMB_HEIGHT / $origHeight);
-            $newWidth = (int) ($origWidth * $ratio);
-            $newHeight = (int) ($origHeight * $ratio);
+        // Scale down only — never upscale
+        if ($origW > $maxW || $origH > $maxH) {
+            $ratio  = min($maxW / $origW, $maxH / $origH);
+            $newW   = (int) round($origW * $ratio);
+            $newH   = (int) round($origH * $ratio);
 
-            $resized = imagecreatetruecolor($newWidth, $newHeight);
-            // Preserve transparency for PNG
-            imagealphablending($resized, false);
-            imagesavealpha($resized, true);
-            imagecopyresampled($resized, $image, 0, 0, 0, 0, $newWidth, $newHeight, $origWidth, $origHeight);
+            $canvas = imagecreatetruecolor($newW, $newH);
+            imagealphablending($canvas, false);
+            imagesavealpha($canvas, true);
+            imagecopyresampled($canvas, $image, 0, 0, 0, 0, $newW, $newH, $origW, $origH);
             imagedestroy($image);
-            $image = $resized;
+            $image = $canvas;
         }
 
         imagewebp($image, $destPath, 85);
@@ -136,8 +172,8 @@ class MediaManager
 
     private function formatBytes(int $bytes): string
     {
-        if ($bytes >= 1048576) {
-            return round($bytes / 1048576, 2) . ' MB';
+        if ($bytes >= 1_048_576) {
+            return round($bytes / 1_048_576, 2) . ' MB';
         }
 
         return round($bytes / 1024, 2) . ' KB';

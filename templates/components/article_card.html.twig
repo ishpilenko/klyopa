@@ -9,10 +9,12 @@
     {% if article.featuredImage %}
         <div class="article-card__image">
             <a href="{{ url }}" tabindex="-1" aria-hidden="true">
-                <img src="/uploads/{{ article.featuredImage.path }}"
+                <img src="{{ article.featuredImage.thumbUrl }}"
+                     srcset="{{ article.featuredImage.srcset }}"
+                     sizes="(max-width: 480px) 400px, (max-width: 900px) 50vw, 400px"
                      alt="{{ article.featuredImage.altText ?? article.title }}"
                      loading="lazy"
-                     width="400" height="200">
+                     width="400" height="225">
             </a>
         </div>
     {% else %}

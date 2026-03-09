@@ -1,0 +1,141 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+
+{% block page_title %}Upload Media{% endblock %}
+
+{% block main %}
+
+{% for label, messages in app.flashes %}
+    {% for message in messages %}
+        <div class="alert alert-{{ label == 'success' ? 'success' : (label == 'warning' ? 'warning' : 'danger') }}"
+             style="padding:.75rem 1rem;border-radius:6px;margin-bottom:1rem;
+                    background:{{ label == 'success' ? '#d1fae5' : (label == 'warning' ? '#fef3c7' : '#fee2e2') }};
+                    color:{{ label == 'success' ? '#065f46' : (label == 'warning' ? '#92400e' : '#991b1b') }};
+                    border:1px solid {{ label == 'success' ? '#a7f3d0' : (label == 'warning' ? '#fde68a' : '#fecaca') }}">
+            {{ message }}
+        </div>
+    {% endfor %}
+{% endfor %}
+
+<div style="max-width:600px">
+
+    <form method="post"
+          enctype="multipart/form-data"
+          action="{{ ea_url().setController('App\\Controller\\Admin\\MediaCrudController').setAction('uploadPage').generateUrl() }}"
+          id="upload-form">
+
+        <input type="hidden" name="_token" value="{{ csrf_token('media_upload') }}">
+
+        {# Drop zone #}
+        <div id="drop-zone"
+             style="border:2px dashed #d1d5db;border-radius:8px;padding:2.5rem 1.5rem;
+                    text-align:center;cursor:pointer;transition:border-color .2s,background .2s;
+                    background:#fafafa;margin-bottom:1.5rem">
+            <div style="font-size:2.5rem;line-height:1;margin-bottom:.75rem">🖼️</div>
+            <p style="margin:0 0 .5rem;font-weight:600;font-size:1rem">
+                Drop images here or <label for="file-input" style="color:#6366f1;cursor:pointer;text-decoration:underline">browse files</label>
+            </p>
+            <p style="margin:0;font-size:.85rem;color:#6b7280">
+                JPEG, PNG, GIF, WebP, SVG &mdash; max 10 MB each. Multiple files allowed.
+            </p>
+            <input type="file"
+                   id="file-input"
+                   name="files[]"
+                   accept="image/*"
+                   multiple
+                   style="display:none">
+        </div>
+
+        {# Preview grid #}
+        <div id="preview-grid"
+             style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:.75rem;margin-bottom:1.25rem"></div>
+
+        {# Alt text #}
+        <div style="margin-bottom:1.25rem">
+            <label for="alt_text" style="display:block;font-weight:500;font-size:.875rem;margin-bottom:.375rem">
+                Alt Text <span style="color:#9ca3af;font-weight:400">(optional, applies to all uploaded files)</span>
+            </label>
+            <input type="text"
+                   id="alt_text"
+                   name="alt_text"
+                   placeholder="Describe the image…"
+                   style="width:100%;padding:.625rem .875rem;border:1px solid #d1d5db;border-radius:6px;font-size:.9375rem">
+        </div>
+
+        <div style="display:flex;gap:1rem;align-items:center">
+            <button type="submit"
+                    id="submit-btn"
+                    style="padding:.625rem 1.5rem;background:#6366f1;color:#fff;border:none;
+                           border-radius:6px;font-weight:600;cursor:pointer;font-size:.9375rem">
+                Upload
+            </button>
+            <a href="{{ ea_url().setController('App\\Controller\\Admin\\MediaCrudController').setAction('index').generateUrl() }}"
+               style="font-size:.9rem;color:#6b7280">
+                ← Back to Media list
+            </a>
+        </div>
+
+    </form>
+
+</div>
+
+<script>
+(function () {
+    var dropZone   = document.getElementById('drop-zone');
+    var fileInput  = document.getElementById('file-input');
+    var previewGrid = document.getElementById('preview-grid');
+
+    function showPreviews(files) {
+        previewGrid.innerHTML = '';
+        Array.from(files).forEach(function (f) {
+            var wrap = document.createElement('div');
+            wrap.style.cssText = 'border:1px solid #e5e7eb;border-radius:6px;overflow:hidden;position:relative;aspect-ratio:1;background:#f3f4f6;display:flex;align-items:center;justify-content:center;';
+            if (f.type.startsWith('image/')) {
+                var img = document.createElement('img');
+                img.src = URL.createObjectURL(f);
+                img.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+                img.onload = function () { URL.revokeObjectURL(img.src); };
+                wrap.appendChild(img);
+            } else {
+                wrap.textContent = f.name;
+                wrap.style.fontSize = '.7rem';
+                wrap.style.padding = '.25rem';
+                wrap.style.wordBreak = 'break-all';
+            }
+            var label = document.createElement('div');
+            label.textContent = Math.round(f.size / 1024) + ' KB';
+            label.style.cssText = 'position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.5);color:#fff;font-size:.65rem;text-align:center;padding:.15rem';
+            wrap.appendChild(label);
+            previewGrid.appendChild(wrap);
+        });
+    }
+
+    fileInput.addEventListener('change', function () {
+        showPreviews(this.files);
+    });
+
+    dropZone.addEventListener('dragover', function (e) {
+        e.preventDefault();
+        dropZone.style.borderColor = '#6366f1';
+        dropZone.style.background  = '#eef2ff';
+    });
+    dropZone.addEventListener('dragleave', function () {
+        dropZone.style.borderColor = '#d1d5db';
+        dropZone.style.background  = '#fafafa';
+    });
+    dropZone.addEventListener('drop', function (e) {
+        e.preventDefault();
+        dropZone.style.borderColor = '#d1d5db';
+        dropZone.style.background  = '#fafafa';
+        fileInput.files = e.dataTransfer.files;
+        showPreviews(e.dataTransfer.files);
+    });
+
+    dropZone.addEventListener('click', function (e) {
+        if (e.target !== document.getElementById('file-input') && e.target.tagName !== 'LABEL') {
+            fileInput.click();
+        }
+    });
+})();
+</script>
+
+{% endblock %}

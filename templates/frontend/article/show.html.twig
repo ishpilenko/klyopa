@@ -60,9 +60,12 @@
                 {# Featured Image #}
                 {% if article.featuredImage %}
                     <div class="article-featured-image">
-                        <img src="/uploads/{{ article.featuredImage.path }}"
+                        <img src="{{ article.featuredImage.publicUrl }}"
+                             srcset="{{ article.featuredImage.srcset }}"
+                             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 800px, 1200px"
                              alt="{{ article.featuredImage.altText ?? article.title }}"
                              loading="eager"
+                             width="1200" height="675"
                              itemprop="image">
                     </div>
                 {% endif %}
