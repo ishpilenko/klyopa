@@ -1,5 +1,6 @@
 {# @var categories \App\Entity\Category[] #}
 {# @var active_category \App\Entity\Category|null #}
+{# @var trending_articles \App\Entity\Article[]|null #}
 
 {# Categories widget #}
 {% if categories is not empty %}
@@ -20,7 +21,32 @@
 </div>
 {% endif %}
 
-{# Placeholder ad widget #}
-<div class="sidebar-widget" style="text-align:center;background:var(--color-surface-alt);color:var(--color-text-muted);min-height:250px;display:flex;align-items:center;justify-content:center">
-    <p style="font-size:.8rem;margin:0">Advertisement</p>
+{# Trending widget #}
+{% if trending_articles is defined and trending_articles is not empty %}
+<div class="sidebar-widget">
+    <h3>Trending</h3>
+    <ol style="margin:0;padding:0;list-style:none">
+        {% for article in trending_articles|slice(0, 5) %}
+            {% set cat = article.category %}
+            {% set url = cat ? '/' ~ cat.slug ~ '/' ~ article.slug : '/' ~ article.slug %}
+            <li class="sidebar-trending-item" style="display:flex;gap:.75rem;padding:.75rem 0;border-bottom:1px solid var(--color-border-light);">
+                <span style="font-size:1.5rem;font-weight:800;color:var(--color-border);line-height:1;min-width:24px">{{ loop.index }}</span>
+                <a href="{{ url }}" style="font-size:.875rem;font-weight:500;color:var(--color-text-primary);text-decoration:none;line-height:1.3">
+                    {{ article.title }}
+                </a>
+            </li>
+        {% endfor %}
+    </ol>
+</div>
+{% endif %}
+
+{# Newsletter signup (replaces the ad placeholder) #}
+<div class="sidebar-newsletter">
+    <h3>Daily Crypto Brief</h3>
+    <p>Market highlights &amp; analysis, every morning.</p>
+    <form onsubmit="return false">
+        <input type="email" placeholder="Your email address">
+        <button type="submit">Subscribe Free</button>
+    </form>
+    <p class="note">No spam. Unsubscribe anytime.</p>
 </div>

@@ -144,11 +144,12 @@ class CoinGeckoClient
             $item->expiresAfter(self::TTL_MARKETS);
 
             $data = $this->fetch('/coins/markets', [
-                'vs_currency' => $vsCurrency,
-                'order'       => 'market_cap_desc',
-                'per_page'    => (string) $perPage,
-                'page'        => '1',
-                'sparkline'   => 'false',
+                'vs_currency'             => $vsCurrency,
+                'order'                   => 'market_cap_desc',
+                'per_page'                => (string) $perPage,
+                'page'                    => '1',
+                'sparkline'               => 'false',
+                'price_change_percentage' => '7d',
             ]);
 
             return is_array($data) ? $data : [];

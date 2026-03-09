@@ -18,7 +18,12 @@
             </a>
         </div>
     {% else %}
-        <div class="article-card__image-placeholder"></div>
+        <div class="article-card__image-placeholder"
+             data-category="{{ article.category ? article.category.slug : 'default' }}">
+            <span class="article-card__placeholder-label">
+                {{ article.category ? article.category.name : '' }}
+            </span>
+        </div>
     {% endif %}
 
     <div class="article-card__body">

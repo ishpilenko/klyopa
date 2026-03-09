@@ -1,0 +1,31 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Page Not Found | {{ site.name }}{% endblock %}
+
+{% block robots %}<meta name="robots" content="noindex">{% endblock %}
+
+{% block body %}
+<div class="error-page">
+    <h1 class="error-code">404</h1>
+    <p class="error-message">This page doesn't exist or has been moved.</p>
+
+    <div class="error-search">
+        <input type="text"
+               placeholder="Search for what you need…"
+               id="error-search-input"
+               onkeydown="if(event.key==='Enter'&&this.value.trim().length>1){document.getElementById('search-overlay').hidden=false;document.getElementById('search-input').value=this.value;this.dispatchEvent(new Event('input'));}">
+    </div>
+
+    <div class="error-suggestions">
+        <h2>Popular pages</h2>
+        <div class="error-links">
+            <a href="/prices">Live Prices</a>
+            <a href="/">Home</a>
+            <a href="/tools/converter">Crypto Converter</a>
+            <a href="/glossary">Crypto Glossary</a>
+            <a href="/tools/">All Tools</a>
+            <a href="/reviews/exchanges">Exchange Reviews</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

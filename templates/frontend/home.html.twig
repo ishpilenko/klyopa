@@ -4,118 +4,336 @@
 
 {% block body %}
 
-    {# ── Hero ─────────────────────────────────────── #}
-    <section class="home-hero">
-        <div class="container">
-            <h1>{{ site.name }}</h1>
-            {% if site.defaultMetaDescription %}
-                <p>{{ site.defaultMetaDescription }}</p>
-            {% endif %}
-
-            {# ── Crypto: price ticker in hero ── #}
-            {% if top_coins is not null and top_coins is not empty %}
-                <div class="price-ticker">
-                    {% for coin in top_coins|slice(0, 8) %}
-                        {% set change = coin.price_change_percentage_24h ?? 0 %}
-                        <a href="/price/{{ coin.id }}" class="ticker-item">
-                            {% if coin.image is defined %}
-                                <img src="{{ coin.image }}" alt="{{ coin.symbol|upper }}" width="18" height="18" class="ticker-icon">
-                            {% endif %}
-                            <span class="ticker-symbol">{{ coin.symbol|upper }}</span>
-                            <span class="ticker-price">
-                                ${{ coin.current_price|crypto_price }}
-                            </span>
-                            <span class="ticker-change {{ change >= 0 ? 'price-up' : 'price-down' }}">
-                                {{ change >= 0 ? '+' : '' }}{{ change|number_format(2) }}%
-                            </span>
-                        </a>
-                    {% endfor %}
-                    <a href="/prices" class="ticker-more">All prices →</a>
-                </div>
-            {% endif %}
-        </div>
-    </section>
-
-    {# ── Crypto: Tools strip ─────────────────────── #}
-    {% if site.vertical.value == 'crypto' %}
-        <div class="container">
-            <div class="home-tools-strip">
-                <a href="/tools/converter" class="home-tool-card">
-                    <span class="home-tool-icon">⇄</span>
-                    <div>
-                        <strong>Crypto Converter</strong>
-                        <span>Convert BTC, ETH & 100+ coins</span>
-                    </div>
-                </a>
-                <a href="/prices" class="home-tool-card">
-                    <span class="home-tool-icon">📈</span>
-                    <div>
-                        <strong>Live Prices</strong>
-                        <span>Real-time market data</span>
-                    </div>
-                </a>
-                <a href="/tools/investment-calculator/bitcoin" class="home-tool-card">
-                    <span class="home-tool-icon">💰</span>
-                    <div>
-                        <strong>Investment Calculator</strong>
-                        <span>What would your investment be worth?</span>
-                    </div>
-                </a>
-                <a href="/convert/btc-to-usd" class="home-tool-card">
-                    <span class="home-tool-icon">₿</span>
-                    <div>
-                        <strong>BTC to USD</strong>
-                        <span>Live Bitcoin price converter</span>
-                    </div>
-                </a>
-                <a href="/fear-greed-index" class="home-tool-card">
-                    <span class="home-tool-icon">📊</span>
-                    <div>
-                        <strong>Fear & Greed Index</strong>
-                        <span>{% if fear_greed %}{{ fear_greed.value }} — {{ fear_greed.classification }}{% else %}Market sentiment{% endif %}</span>
-                    </div>
-                </a>
-                <a href="/glossary" class="home-tool-card">
-                    <span class="home-tool-icon">📖</span>
-                    <div>
-                        <strong>Crypto Glossary</strong>
-                        <span>{% if glossary_count > 0 %}{{ glossary_count }} terms explained{% else %}Crypto terms A–Z{% endif %}</span>
-                    </div>
-                </a>
-            </div>
-        </div>
-    {% endif %}
-
-    <div class="container">
-        <div class="layout">
-            {# ── Main column ─────────────────────── #}
-            <div>
-
-                <div class="section-header">
-                    <h2>Latest Articles</h2>
-                </div>
-
-                {% if articles is not empty %}
-                    <div class="article-grid">
-                        {% for article in articles %}
-                            {{ include('components/article_card.html.twig', {article: article}) }}
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    <div class="empty-state">
-                        <h3>No articles yet</h3>
-                        <p>Check back soon for the latest content.</p>
-                    </div>
+{# ── 1. Price Ticker (auto-scrolling, crypto only) ── #}
+{% if top_coins is not null and top_coins is not empty %}
+<div class="price-ticker-wrap">
+    <div class="price-ticker-track">
+        {# First copy #}
+        {% for coin in top_coins %}
+            {% set change = coin.price_change_percentage_24h ?? 0 %}
+            <a href="/price/{{ coin.id }}" class="ticker-item">
+                {% if coin.image is defined %}
+                    <img src="{{ coin.image }}" alt="{{ coin.symbol|upper }}" width="16" height="16" class="ticker-icon">
                 {% endif %}
+                <span class="ticker-symbol">{{ coin.symbol|upper }}</span>
+                <span class="ticker-price">${{ coin.current_price|crypto_price }}</span>
+                <span class="ticker-change {{ change >= 0 ? 'price-up' : 'price-down' }}">
+                    {{ change >= 0 ? '+' : '' }}{{ change|number_format(2) }}%
+                </span>
+            </a>
+        {% endfor %}
+        {# Duplicate for seamless loop #}
+        {% for coin in top_coins %}
+            {% set change = coin.price_change_percentage_24h ?? 0 %}
+            <a href="/price/{{ coin.id }}" class="ticker-item" aria-hidden="true" tabindex="-1">
+                {% if coin.image is defined %}
+                    <img src="{{ coin.image }}" alt="" width="16" height="16" class="ticker-icon">
+                {% endif %}
+                <span class="ticker-symbol">{{ coin.symbol|upper }}</span>
+                <span class="ticker-price">${{ coin.current_price|crypto_price }}</span>
+                <span class="ticker-change {{ change >= 0 ? 'price-up' : 'price-down' }}">
+                    {{ change >= 0 ? '+' : '' }}{{ change|number_format(2) }}%
+                </span>
+            </a>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
 
+{# ── 2. Site branding hero (minimal) ── #}
+<section class="home-hero">
+    <div class="container">
+        <h1>{{ site.name }}</h1>
+        {% if site.defaultMetaDescription %}
+            <p>{{ site.defaultMetaDescription }}</p>
+        {% endif %}
+    </div>
+</section>
+
+{# ── 3. Featured Article Hero (crypto: first article featured + sidebar titles) ── #}
+{% if articles is not empty %}
+<section class="home-featured">
+    <div class="container">
+        <div class="home-featured-grid">
+            {# Main featured article #}
+            {% set featured = articles|first %}
+            {% set feat_cat = featured.category %}
+            {% set feat_url = feat_cat ? '/' ~ feat_cat.slug ~ '/' ~ featured.slug : '/' ~ featured.slug %}
+            <a href="{{ feat_url }}" class="hero-featured">
+                <div class="hero-featured-visual">
+                    {% if featured.featuredImage %}
+                        <img src="{{ featured.featuredImage.publicUrl }}"
+                             srcset="{{ featured.featuredImage.srcset }}"
+                             sizes="(max-width: 768px) 100vw, 800px"
+                             alt="{{ featured.featuredImage.altText ?? featured.title }}"
+                             width="800" height="450" loading="eager">
+                    {% else %}
+                        <div class="article-card__image-placeholder"
+                             data-category="{{ feat_cat ? feat_cat.slug : 'default' }}"
+                             style="min-height:225px">
+                            <span class="article-card__placeholder-label">
+                                {{ feat_cat ? feat_cat.name : site.name }}
+                            </span>
+                        </div>
+                    {% endif %}
+                </div>
+                {% if feat_cat %}
+                    <span class="article-card__category">{{ feat_cat.name }}</span>
+                {% endif %}
+                <h2 class="hero-featured-title">{{ featured.title }}</h2>
+                {% if featured.excerpt %}
+                    <p class="hero-featured-excerpt">{{ featured.excerpt|striptags }}</p>
+                {% endif %}
+                <div class="article-card__meta">
+                    {% if featured.publishedAt %}
+                        <time datetime="{{ featured.publishedAt|date('Y-m-d') }}">
+                            {{ featured.publishedAt|date('M j, Y') }}
+                        </time>
+                    {% endif %}
+                    {% if featured.readingTimeMinutes > 0 %}
+                        <span>{{ featured.readingTimeMinutes }} min read</span>
+                    {% endif %}
+                </div>
+            </a>
+
+            {# Sidebar — next 4 article titles #}
+            {% set sidebar_articles = articles|slice(1, 4) %}
+            {% if sidebar_articles is not empty %}
+            <div class="hero-sidebar-list">
+                {% for article in sidebar_articles %}
+                    {% set cat = article.category %}
+                    {% set url = cat ? '/' ~ cat.slug ~ '/' ~ article.slug : '/' ~ article.slug %}
+                    <a href="{{ url }}" class="hero-sidebar-item">
+                        {% if cat %}
+                            <span class="hero-sidebar-category">{{ cat.name }}</span>
+                        {% endif %}
+                        <h3 class="hero-sidebar-title">{{ article.title }}</h3>
+                        {% if article.publishedAt %}
+                            <time class="hero-sidebar-time">{{ article.publishedAt|date('M j') }}</time>
+                        {% endif %}
+                    </a>
+                {% endfor %}
             </div>
-
-            {# ── Sidebar ──────────────────────────── #}
-            <aside class="sidebar">
-                {{ include('components/sidebar.html.twig', {categories: categories}) }}
-                {{ include('components/crypto_sidebar.html.twig') }}
-            </aside>
+            {% endif %}
         </div>
     </div>
+</section>
+{% endif %}
+
+{# ── 4. Tools Shortcuts (crypto only) ── #}
+{% if site.vertical.value == 'crypto' %}
+<div class="tools-shortcuts">
+    <div class="container">
+        <div class="tools-shortcuts-grid">
+            <a href="/tools/converter" class="tool-shortcut-card">
+                <div class="tool-shortcut-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 16V4m0 0L3 8m4-4 4 4"/><path d="M17 8v12m0 0 4-4m-4 4-4-4"/></svg>
+                </div>
+                <div class="tool-shortcut-content">
+                    <span class="tool-shortcut-name">Converter</span>
+                    <span class="tool-shortcut-desc">BTC, ETH &amp; 100+ coins</span>
+                </div>
+            </a>
+            <a href="/prices" class="tool-shortcut-card">
+                <div class="tool-shortcut-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+                </div>
+                <div class="tool-shortcut-content">
+                    <span class="tool-shortcut-name">Live Prices</span>
+                    <span class="tool-shortcut-desc">Top 200 coins</span>
+                </div>
+            </a>
+            <a href="/tools/crypto-profit-calculator" class="tool-shortcut-card">
+                <div class="tool-shortcut-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="12" y2="14"/></svg>
+                </div>
+                <div class="tool-shortcut-content">
+                    <span class="tool-shortcut-name">Profit Calc</span>
+                    <span class="tool-shortcut-desc">Calculate P&amp;L</span>
+                </div>
+            </a>
+            <a href="/tools/dca-calculator" class="tool-shortcut-card">
+                <div class="tool-shortcut-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+                </div>
+                <div class="tool-shortcut-content">
+                    <span class="tool-shortcut-name">DCA Calculator</span>
+                    <span class="tool-shortcut-desc">Dollar cost averaging</span>
+                </div>
+            </a>
+            <a href="/fear-greed-index" class="tool-shortcut-card">
+                <div class="tool-shortcut-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z"/><path d="M12 8v4l3 3"/></svg>
+                </div>
+                <div class="tool-shortcut-content">
+                    <span class="tool-shortcut-name">Fear &amp; Greed</span>
+                    <span class="tool-shortcut-desc">{% if fear_greed %}{{ fear_greed.value }} — {{ fear_greed.classification }}{% else %}Market sentiment{% endif %}</span>
+                </div>
+            </a>
+            <a href="/glossary" class="tool-shortcut-card">
+                <div class="tool-shortcut-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                </div>
+                <div class="tool-shortcut-content">
+                    <span class="tool-shortcut-name">Glossary</span>
+                    <span class="tool-shortcut-desc">{% if glossary_count > 0 %}{{ glossary_count }} terms{% else %}Crypto A–Z{% endif %}</span>
+                </div>
+            </a>
+            <a href="/tools/investment-calculator/bitcoin" class="tool-shortcut-card">
+                <div class="tool-shortcut-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+                </div>
+                <div class="tool-shortcut-content">
+                    <span class="tool-shortcut-name">Investment Calc</span>
+                    <span class="tool-shortcut-desc">What if I invested...</span>
+                </div>
+            </a>
+            <a href="/reviews/exchanges" class="tool-shortcut-card">
+                <div class="tool-shortcut-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                </div>
+                <div class="tool-shortcut-content">
+                    <span class="tool-shortcut-name">Reviews</span>
+                    <span class="tool-shortcut-desc">Top exchanges rated</span>
+                </div>
+            </a>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{# ── 5. Market Overview (top 10 coins, crypto only) ── #}
+{% if top_coins is not null and top_coins is not empty %}
+<section class="market-overview">
+    <div class="container">
+        <div class="section-header">
+            <h2>Market Overview</h2>
+            <a href="/prices">View all →</a>
+        </div>
+        <div class="market-table-wrapper">
+            <table class="market-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Name</th>
+                        <th class="col-right">Price</th>
+                        <th class="col-right">24h</th>
+                        <th class="col-right hide-mobile">7d</th>
+                        <th class="col-right hide-mobile">Market Cap</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for coin in top_coins %}
+                        {% set change24 = coin.price_change_percentage_24h ?? 0 %}
+                        {% set change7d = coin.price_change_percentage_7d_in_currency ?? coin.price_change_percentage_7d ?? null %}
+                        <tr class="market-row" onclick="window.location='/price/{{ coin.id }}'">
+                            <td class="market-rank">{{ coin.market_cap_rank ?? loop.index }}</td>
+                            <td class="market-name">
+                                {% if coin.image is defined %}
+                                    <img src="{{ coin.image }}" alt="{{ coin.name }}" width="24" height="24"
+                                         class="market-coin-icon" loading="lazy">
+                                {% endif %}
+                                <span>{{ coin.name }}</span>
+                                <span class="market-coin-symbol">{{ coin.symbol|upper }}</span>
+                            </td>
+                            <td class="market-price">${{ coin.current_price|crypto_price }}</td>
+                            <td class="market-change {{ change24 >= 0 ? 'positive' : 'negative' }}">
+                                {{ change24 >= 0 ? '+' : '' }}{{ change24|number_format(2) }}%
+                            </td>
+                            <td class="market-change hide-mobile {{ change7d is not null ? (change7d >= 0 ? 'positive' : 'negative') : '' }}">
+                                {% if change7d is not null %}
+                                    {{ change7d >= 0 ? '+' : '' }}{{ change7d|number_format(2) }}%
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </td>
+                            <td class="market-cap hide-mobile">
+                                {% if coin.market_cap is defined and coin.market_cap %}
+                                    {% if coin.market_cap >= 1000000000 %}
+                                        ${{ (coin.market_cap / 1000000000)|number_format(2) }}B
+                                    {% else %}
+                                        ${{ (coin.market_cap / 1000000)|number_format(1) }}M
+                                    {% endif %}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+{# ── 6. Latest Articles + Sidebar ── #}
+<div class="container" style="padding: var(--space-8) 0 var(--space-12)">
+    <div class="layout">
+        <div>
+            <div class="section-header">
+                <h2>Latest Articles</h2>
+            </div>
+
+            {% if articles is not empty %}
+                {# 2 featured cards #}
+                {% set main_articles = articles|slice(0, 2) %}
+                {% set compact_articles = articles|slice(2, 6) %}
+
+                <div class="articles-featured-grid">
+                    {% for article in main_articles %}
+                        {{ include('components/article_card.html.twig', {article: article}) }}
+                    {% endfor %}
+                </div>
+
+                {# Compact list #}
+                {% if compact_articles is not empty %}
+                <div class="articles-compact-list">
+                    {% for article in compact_articles %}
+                        {% set cat = article.category %}
+                        {% set url = cat ? '/' ~ cat.slug ~ '/' ~ article.slug : '/' ~ article.slug %}
+                        <a href="{{ url }}" class="article-compact">
+                            <div class="article-compact-body">
+                                {% if cat %}
+                                    <span class="article-card__category">{{ cat.name }}</span>
+                                {% endif %}
+                                <h3 class="article-compact-title">{{ article.title }}</h3>
+                                <div class="article-card__meta">
+                                    {% if article.publishedAt %}
+                                        <time datetime="{{ article.publishedAt|date('Y-m-d') }}">
+                                            {{ article.publishedAt|date('M j, Y') }}
+                                        </time>
+                                    {% endif %}
+                                    {% if article.readingTimeMinutes > 0 %}
+                                        <span>{{ article.readingTimeMinutes }} min read</span>
+                                    {% endif %}
+                                    {% if article.isAiGenerated %}
+                                        <span class="badge-ai">AI</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </a>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+            {% else %}
+                <div class="empty-state">
+                    <h3>No articles yet</h3>
+                    <p>Check back soon for the latest content.</p>
+                </div>
+            {% endif %}
+        </div>
+
+        {# Sidebar #}
+        <aside class="sidebar">
+            {{ include('components/sidebar.html.twig', {
+                categories: categories,
+                trending_articles: articles
+            }) }}
+            {{ include('components/crypto_sidebar.html.twig') }}
+        </aside>
+    </div>
+</div>
 
 {% endblock %}

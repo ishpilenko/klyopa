@@ -48,7 +48,7 @@ class HomeController extends AbstractController
 
         return $this->render('frontend/home.html.twig', [
             'site'           => $site,
-            'articles'       => $this->articleRepository->findPublished(limit: 10),
+            'articles'       => $this->articleRepository->findPublished(limit: 12),
             'categories'     => $this->categoryRepository->findActive(),
             'top_coins'      => $topCoins,
             'fear_greed'     => $fearGreed,
