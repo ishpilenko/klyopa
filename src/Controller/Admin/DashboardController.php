@@ -7,8 +7,10 @@ namespace App\Controller\Admin;
 use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminDashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Dashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\MenuItem;
+use EasyCorp\Bundle\EasyAdminBundle\Config\UserMenu;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractDashboardController;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Security\Core\User\UserInterface;
 
 #[AdminDashboard(routePath: '/admin', routeName: 'admin')]
 class DashboardController extends AbstractDashboardController
@@ -24,6 +26,16 @@ class DashboardController extends AbstractDashboardController
             ->setTitle('MultiSite Platform')
             ->setFaviconPath('favicon.ico')
             ->renderContentMaximized();
+    }
+
+    public function configureUserMenu(UserInterface $user): UserMenu
+    {
+        return parent::configureUserMenu($user)
+            ->setName((string) $user)
+            ->displayUserName(true)
+            ->addMenuItems([
+                MenuItem::linkToUrl('Logout', 'fa fa-sign-out', $this->generateUrl('admin_logout')),
+            ]);
     }
 
     public function configureMenuItems(): iterable
@@ -43,6 +55,10 @@ class DashboardController extends AbstractDashboardController
 
         yield MenuItem::section('Settings');
         yield MenuItem::linkTo(SiteCrudController::class, 'Sites', 'fa fa-globe');
+
+        yield MenuItem::section('Admin');
+        yield MenuItem::linkTo(UserCrudController::class, 'Users', 'fa fa-users')
+            ->setPermission('ROLE_SUPER_ADMIN');
 
         yield MenuItem::section('');
         yield MenuItem::linkToUrl('View Site', 'fa fa-external-link', '/');
