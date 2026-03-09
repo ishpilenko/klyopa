@@ -23,11 +23,7 @@
                             {% endif %}
                             <span class="ticker-symbol">{{ coin.symbol|upper }}</span>
                             <span class="ticker-price">
-                                {% if coin.current_price >= 1 %}
-                                    ${{ coin.current_price|number_format(2) }}
-                                {% else %}
-                                    ${{ coin.current_price|number_format(4)|trim('0')|trim('.') }}
-                                {% endif %}
+                                ${{ coin.current_price|crypto_price }}
                             </span>
                             <span class="ticker-change {{ change >= 0 ? 'price-up' : 'price-down' }}">
                                 {{ change >= 0 ? '+' : '' }}{{ change|number_format(2) }}%

@@ -50,11 +50,7 @@
                                         </td>
                                         <td class="col-price price-cell">
                                             {% if coin.current_price is defined and coin.current_price %}
-                                                {% if coin.current_price >= 1 %}
-                                                    ${{ coin.current_price|number_format(2) }}
-                                                {% else %}
-                                                    ${{ coin.current_price|number_format(6)|trim('0')|trim('.') }}
-                                                {% endif %}
+                                                ${{ coin.current_price|crypto_price }}
                                             {% else %}
                                                 <span class="text-muted">N/A</span>
                                             {% endif %}

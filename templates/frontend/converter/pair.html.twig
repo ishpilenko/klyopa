@@ -17,7 +17,7 @@
                 "name": "What is the current {{ from_symbol }} to {{ to_symbol }} exchange rate?",
                 "acceptedAnswer": {
                     "@type": "Answer",
-                    "text": "1 {{ from_symbol }} is currently worth {{ rate|number_format(8)|trim('0')|trim('.') }} {{ to_symbol }}. Rates update every 60 seconds."
+                    "text": "1 {{ from_symbol }} is currently worth {{ rate|crypto_amount }} {{ to_symbol }}. Rates update every 60 seconds."
                 }
             },
             {
@@ -33,7 +33,7 @@
                 "name": "How much is {{ amount }} {{ from_symbol }} in {{ to_symbol }}?",
                 "acceptedAnswer": {
                     "@type": "Answer",
-                    "text": "{{ amount }} {{ from_symbol }} equals {{ result|number_format(8)|trim('0')|trim('.') }} {{ to_symbol }} at the current exchange rate of 1 {{ from_symbol }} = {{ rate|number_format(8)|trim('0')|trim('.') }} {{ to_symbol }}."
+                    "text": "{{ amount }} {{ from_symbol }} equals {{ result|crypto_amount }} {{ to_symbol }} at the current exchange rate of 1 {{ from_symbol }} = {{ rate|crypto_amount }} {{ to_symbol }}."
                 }
             }
         ]
@@ -48,7 +48,7 @@
             {{ include('components/breadcrumb.html.twig', {items: breadcrumbs}) }}
             <h1>Convert {{ from_name }} ({{ from_symbol }}) to {{ to_name }} ({{ to_symbol }})</h1>
             {% if rate is not null %}
-                <p>1 {{ from_symbol }} = <strong>{{ rate|number_format(8)|trim('0')|trim('.') }} {{ to_symbol }}</strong> &ensp;·&ensp; Updated just now</p>
+                <p>1 {{ from_symbol }} = <strong>{{ rate|crypto_amount }} {{ to_symbol }}</strong> &ensp;·&ensp; Updated just now</p>
             {% endif %}
         </div>
     </section>
@@ -83,13 +83,13 @@
                         <input type="text"
                                id="converter-result"
                                class="form-control"
-                               value="{{ result is not null ? result|number_format(8)|trim('0')|trim('.') : '—' }}"
+                               value="{{ result is not null ? result|crypto_amount : '—' }}"
                                readonly>
                     </div>
                 </div>
 
                 <p class="converter-updated text-muted" style="font-size:.85rem;margin-top:.75rem">
-                    Exchange rate: 1 {{ from_symbol }} = <strong id="rate-display">{{ rate is not null ? rate|number_format(8)|trim('0')|trim('.') : '—' }}</strong> {{ to_symbol }}
+                    Exchange rate: 1 {{ from_symbol }} = <strong id="rate-display">{{ rate is not null ? rate|crypto_amount : '—' }}</strong> {{ to_symbol }}
                     &ensp;·&ensp; Rates update every 60 seconds.
                 </p>
 
@@ -114,7 +114,7 @@
                         {% for row in table %}
                             <tr>
                                 <td>{{ row.amount }} {{ from_symbol }}</td>
-                                <td><strong>{{ row.result is not null ? row.result|number_format(8)|trim('0')|trim('.') : '—' }}</strong> {{ to_symbol }}</td>
+                                <td><strong>{{ row.result is not null ? row.result|crypto_amount : '—' }}</strong> {{ to_symbol }}</td>
                             </tr>
                         {% endfor %}
                     </tbody>
@@ -135,7 +135,7 @@
                         {% for row in reverse_table %}
                             <tr>
                                 <td>{{ row.amount }} {{ to_symbol }}</td>
-                                <td><strong>{{ row.result is not null ? row.result|number_format(8)|trim('0')|trim('.') : '—' }}</strong> {{ from_symbol }}</td>
+                                <td><strong>{{ row.result is not null ? row.result|crypto_amount : '—' }}</strong> {{ from_symbol }}</td>
                             </tr>
                         {% endfor %}
                     </tbody>
@@ -150,7 +150,7 @@
 
             <div class="faq-item">
                 <h3>What is the current {{ from_symbol }} to {{ to_symbol }} exchange rate?</h3>
-                <p>1 {{ from_symbol }} is currently worth {{ rate|number_format(8)|trim('0')|trim('.') }} {{ to_symbol }}.
+                <p>1 {{ from_symbol }} is currently worth {{ rate|crypto_amount }} {{ to_symbol }}.
                    This rate is sourced from CoinGecko and updates every 60 seconds.</p>
             </div>
 

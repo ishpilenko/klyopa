@@ -117,17 +117,17 @@
                     <div class="result-item">
                         <span class="result-label">Historical Price</span>
                         <span class="result-value">
-                            ${{ result.historical_price >= 1 ? result.historical_price|number_format(2) : result.historical_price|number_format(6)|trim('0')|trim('.') }}
+                            ${{ result.historical_price >= 1 ? result.historical_price|number_format(2) : result.historical_price|crypto_price }}
                         </span>
                     </div>
                     <div class="result-item">
                         <span class="result-label">{{ coin_symbol }} Acquired</span>
-                        <span class="result-value">{{ result.coins_acquired|number_format(8)|trim('0')|trim('.') }}</span>
+                        <span class="result-value">{{ result.coins_acquired|crypto_amount }}</span>
                     </div>
                     <div class="result-item">
                         <span class="result-label">Current Price</span>
                         <span class="result-value">
-                            ${{ result.current_price >= 1 ? result.current_price|number_format(2) : result.current_price|number_format(6)|trim('0')|trim('.') }}
+                            ${{ result.current_price >= 1 ? result.current_price|number_format(2) : result.current_price|crypto_price }}
                         </span>
                     </div>
                     <div class="result-item result-item--highlight">

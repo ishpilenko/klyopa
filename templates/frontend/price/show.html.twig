@@ -68,7 +68,7 @@
                 <div class="price-hero-right">
                     <div class="price-display">
                         {% if price is not null %}
-                            ${{ price >= 1 ? price|number_format(2) : price|number_format(6)|trim('0')|trim('.') }}
+                            ${{ price|crypto_price }}
                         {% else %}
                             <span class="text-muted">N/A</span>
                         {% endif %}
@@ -186,7 +186,7 @@
                 <div class="metric-card">
                     <span class="metric-label">All-Time High</span>
                     <span class="metric-value">
-                        ${{ ath >= 1 ? ath|number_format(2) : ath|number_format(6)|trim('0')|trim('.') }}
+                        ${{ ath|crypto_price }}
                         {% if ath_date %}
                             <small class="text-muted" style="font-size:.75rem;display:block">{{ ath_date|slice(0,10) }}</small>
                         {% endif %}
@@ -250,7 +250,7 @@
                     <h3>What is the current {{ name }} price?</h3>
                     <p>
                         The current {{ name }} ({{ symbol }}) price is
-                        {% if price %}${{ price >= 1 ? price|number_format(2) : price|number_format(6)|trim('0')|trim('.') }}{% else %}unavailable{% endif %}.
+                        {% if price %}${{ price|crypto_price }}{% else %}unavailable{% endif %}.
                         The price is updated every 60 seconds from live market data.
                     </p>
                 </div>
@@ -258,7 +258,7 @@
                     <h3>How much is 1 {{ symbol }} in USD?</h3>
                     <p>
                         1 {{ symbol }} equals
-                        {% if price %}${{ price >= 1 ? price|number_format(2) : price|number_format(8)|trim('0')|trim('.') }} USD{% else %}an amount that varies with market conditions{% endif %}.
+                        {% if price %}${{ price|crypto_price }} USD{% else %}an amount that varies with market conditions{% endif %}.
                         Use our <a href="/convert/{{ coin_id }}-to-usd">{{ symbol }} to USD converter</a> for custom amounts.
                     </p>
                 </div>
