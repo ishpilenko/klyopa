@@ -60,6 +60,12 @@ composer-require: ## Add a package: make composer-require pkg=vendor/package
 
 cc: cache-clear ## Alias for cache-clear
 
+mysql: ## Open MySQL console (database: multisite)
+	docker-compose exec mysql mysql -u app -psecret multisite
+
+redis: ## Open Redis CLI
+	docker-compose exec redis redis-cli
+
 fix-perms: ## Fix file permissions so PhpStorm/host user can edit files
 	@echo "Setting ownership to $(HOST_UID):$(HOST_GID) on all project files..."
 	docker-compose run --rm --user root php chown -R $(HOST_UID):$(HOST_GID) /var/www
