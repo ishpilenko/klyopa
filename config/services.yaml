@@ -44,3 +44,7 @@ services:
     App\Service\Newsletter\DigestGenerator:
         arguments:
             $anthropicApiKey: '%env(default::ANTHROPIC_API_KEY)%'
+
+    App\Command\SeedArticlesCommand:
+        arguments:
+            $anthropicApiKey: '%env(default::ANTHROPIC_API_KEY)%'

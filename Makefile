@@ -60,6 +60,10 @@ composer-require: ## Add a package: make composer-require pkg=vendor/package
 
 cc: cache-clear ## Alias for cache-clear
 
+seed-articles: ## Generate test articles via Claude API: make seed-articles [site=1] [n=2]
+	docker-compose run --rm --user root php php bin/console app:seed:articles \
+		--site-id=$(or $(site),1) --per-category=$(or $(n),2)
+
 mysql: ## Open MySQL console (database: multisite)
 	docker-compose exec mysql mysql -u app -psecret multisite
 
