@@ -1,94 +1,136 @@
 <?php
-
 declare(strict_types=1);
-
 namespace App\Controller\Frontend;
 
-use App\Entity\NewsletterSubscription;
-use App\Repository\NewsletterSubscriptionRepository;
+use App\Entity\NewsletterSubscriber;
+use App\Enum\SubscriberStatus;
+use App\Repository\NewsletterSubscriberRepository;
+use App\Service\Newsletter\NewsletterMailer;
 use App\Service\SiteContext;
 use App\Service\TurnstileVerifier;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Session\SessionInterface;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\Validator\Constraints\Email;
-use Symfony\Component\Validator\Validation;
 
-#[Route('/newsletter/subscribe', name: 'newsletter_subscribe', methods: ['POST'])]
 class NewsletterController extends AbstractController
 {
-    private const SESSION_KEY       = 'newsletter_submit_count';
-    private const MAX_PER_SESSION   = 3;          // hard cap per session
-    private const CAPTCHA_THRESHOLD = 1;           // require captcha after Nth submit
-
     public function __construct(
         private readonly SiteContext $siteContext,
         private readonly EntityManagerInterface $em,
-        private readonly NewsletterSubscriptionRepository $subscriptionRepo,
+        private readonly NewsletterSubscriberRepository $subscriberRepo,
+        private readonly NewsletterMailer $mailer,
         private readonly TurnstileVerifier $turnstile,
     ) {
     }
 
-    public function __invoke(Request $request): JsonResponse
+    #[Route('/newsletter/subscribe', name: 'newsletter_subscribe', methods: ['POST'])]
+    public function subscribe(Request $request): JsonResponse
     {
-        // ── CSRF ──────────────────────────────────────────────────────────────
-        $csrfToken = $request->request->get('_token');
-        if (!$this->isCsrfTokenValid('newsletter', $csrfToken)) {
-            return $this->json(['error' => 'Invalid request.'], 400);
+        // Accept both JSON and form-encoded
+        $contentType = $request->headers->get('Content-Type', '');
+        if (str_contains($contentType, 'application/json')) {
+            $data    = json_decode($request->getContent(), true) ?? [];
+            $email   = trim((string) ($data['email'] ?? ''));
+            $source  = (string) ($data['source'] ?? 'homepage');
+            $cfToken = (string) ($data['cf-turnstile-response'] ?? '');
+        } else {
+            $email   = trim((string) $request->request->get('email', ''));
+            $source  = (string) $request->request->get('source', 'homepage');
+            $cfToken = (string) $request->request->get('cf-turnstile-response', '');
         }
 
-        // ── Session counter ────────────────────────────────────────────────────
-        $session = $request->getSession();
-        $submitCount = (int) $session->get(self::SESSION_KEY, 0);
+        // Session-based captcha gate (2nd+ submit)
+        $session      = $request->getSession();
+        $submitCount  = (int) $session->get('nl_submit_count', 0);
 
-        // Hard cap: prevent even legitimate multi-submit spam
-        if ($submitCount >= self::MAX_PER_SESSION) {
-            return $this->json(['error' => 'Too many attempts this session. Please try again later.'], 429);
-        }
-
-        // ── Captcha (required on 2nd+ submit in session) ───────────────────────
-        if ($submitCount >= self::CAPTCHA_THRESHOLD) {
-            $token = $request->request->get('cf-turnstile-response', '');
-            if (!$this->turnstile->verify($token, $request->getClientIp() ?? '')) {
-                return $this->json([
-                    'error'           => 'Please complete the captcha.',
-                    'captcha_required' => true,
-                ], 400);
+        if ($submitCount >= 1) {
+            if (!$this->turnstile->verify($cfToken ?: null, $request->getClientIp() ?? '')) {
+                return $this->json(['error' => 'Please complete the captcha.', 'captcha_required' => true], 400);
             }
         }
 
-        // ── Email validation ───────────────────────────────────────────────────
-        $email = strtolower(trim((string) $request->request->get('email', '')));
-
-        $validator  = Validation::createValidator();
-        $violations = $validator->validate($email, [new Email(['mode' => 'html5'])]);
-
-        if (count($violations) > 0 || $email === '') {
-            return $this->json(['error' => 'Please enter a valid email address.'], 422);
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return $this->json(['error' => 'Please enter a valid email address.'], 400);
         }
 
-        // ── Save (idempotent — same email returns success silently) ────────────
-        $site = $this->siteContext->getSite();
+        $site     = $this->siteContext->getSite();
+        $existing = $this->subscriberRepo->findByEmail($site, strtolower($email));
 
-        $existing = $this->subscriptionRepo->findByEmail($site, $email);
-
-        if ($existing === null) {
-            $subscription = (new NewsletterSubscription())
-                ->setSite($site)
-                ->setEmail($email)
-                ->setIpAddress($request->getClientIp());
-
-            $this->em->persist($subscription);
+        if ($existing) {
+            if ($existing->getStatus() === SubscriberStatus::Active) {
+                $session->set('nl_submit_count', $submitCount + 1);
+                return $this->json(['message' => 'This email is already subscribed.']);
+            }
+            if ($existing->getStatus() === SubscriberStatus::Pending) {
+                $this->mailer->sendConfirmation($existing);
+                $session->set('nl_submit_count', $submitCount + 1);
+                return $this->json(['message' => 'Confirmation email resent. Check your inbox.']);
+            }
+            // Resubscribe after unsubscribe
+            $existing->resubscribe();
             $this->em->flush();
+            $this->mailer->sendConfirmation($existing);
+            $session->set('nl_submit_count', $submitCount + 1);
+            return $this->json(['message' => 'Check your email to reconfirm your subscription.']);
         }
-        // If already subscribed — return success anyway (don't leak existence)
 
-        // ── Increment session counter ──────────────────────────────────────────
-        $session->set(self::SESSION_KEY, $submitCount + 1);
+        $subscriber = (new NewsletterSubscriber())
+            ->setSite($site)
+            ->setEmail(strtolower($email))
+            ->setSource($source)
+            ->setIpAddress($request->getClientIp())
+            ->setUserAgent($request->headers->get('User-Agent'));
 
-        return $this->json(['success' => true, 'message' => 'You\'re subscribed! 🎉']);
+        $this->em->persist($subscriber);
+        $this->em->flush();
+
+        $this->mailer->sendConfirmation($subscriber);
+
+        $session->set('nl_submit_count', $submitCount + 1);
+
+        return $this->json(['message' => 'Check your email to confirm your subscription.']);
+    }
+
+    #[Route('/newsletter/confirm/{token}', name: 'newsletter_confirm', methods: ['GET'])]
+    public function confirm(string $token): Response
+    {
+        $subscriber = $this->subscriberRepo->findByToken($token);
+
+        if (!$subscriber) {
+            throw $this->createNotFoundException('Invalid confirmation link.');
+        }
+
+        if ($subscriber->getStatus() === SubscriberStatus::Active) {
+            return $this->render('frontend/newsletter/already_confirmed.html.twig', ['site' => $this->siteContext->getSite()]);
+        }
+
+        $subscriber->confirm();
+        $this->em->flush();
+
+        return $this->render('frontend/newsletter/confirmed.html.twig', [
+            'subscriber' => $subscriber,
+            'site'       => $this->siteContext->getSite(),
+        ]);
+    }
+
+    #[Route('/newsletter/unsubscribe/{token}', name: 'newsletter_unsubscribe', methods: ['GET'])]
+    public function unsubscribe(string $token): Response
+    {
+        $subscriber = $this->subscriberRepo->findByToken($token);
+
+        if (!$subscriber) {
+            throw $this->createNotFoundException('Invalid unsubscribe link.');
+        }
+
+        $subscriber->unsubscribe();
+        $this->em->flush();
+
+        return $this->render('frontend/newsletter/unsubscribed.html.twig', [
+            'subscriber' => $subscriber,
+            'site'       => $this->siteContext->getSite(),
+        ]);
     }
 }

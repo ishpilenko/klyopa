@@ -44,11 +44,12 @@
 <div class="sidebar-newsletter">
     <h3>Daily Crypto Brief</h3>
     <p>Market highlights &amp; analysis, every morning.</p>
-    <form class="newsletter-form" data-captcha-guard="newsletter" novalidate>
-        <input type="hidden" name="_token" value="{{ csrf_token('newsletter') }}">
-        <input type="email" name="email" placeholder="Your email address" required autocomplete="email">
-        <button type="submit">Subscribe Free</button>
+    <div class="newsletter-widget" data-url="{{ path('newsletter_subscribe') }}" data-source="sidebar">
+        <div class="nl-fields">
+            <input type="email" class="nl-email" placeholder="Your email address" required autocomplete="email">
+            <button type="button" class="nl-submit">Subscribe Free</button>
+        </div>
         <p class="nl-status" style="font-size:.75rem;margin:.5rem 0 0;min-height:1em"></p>
-    </form>
+    </div>
     <p class="note">No spam. Unsubscribe anytime.</p>
 </div>

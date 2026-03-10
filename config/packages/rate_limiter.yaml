@@ -1,0 +1,6 @@
+framework:
+    rate_limiter:
+        newsletter_send:
+            policy: token_bucket
+            limit: 10
+            rate: { interval: '1 second' }

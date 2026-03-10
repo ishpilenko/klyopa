@@ -10,7 +10,8 @@
       "Bash(head:*)",
       "Bash(docker-compose exec:*)",
       "Bash(grep < HTTP\\\\|<loc>:*)",
-      "Bash(grep <loc>:*)"
+      "Bash(grep <loc>:*)",
+      "Bash(ls:*)"
     ]
   }
 }

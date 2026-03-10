@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Newsletter Subscribers — Admin</title>
+    <style>
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+        body{font-family:system-ui,-apple-system,sans-serif;background:#f3f4f6;color:#1f2937;font-size:.9rem}
+        .wrap{max-width:1200px;margin:0 auto;padding:1.5rem}
+        .page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:.75rem}
+        .page-header h1{font-size:1.375rem;font-weight:700}
+        .back{font-size:.875rem;color:#6b7280;text-decoration:none}
+        .back:hover{color:#374151}
+        .stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:1rem;margin-bottom:1.5rem}
+        .stat{background:#fff;border-radius:8px;padding:1rem;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+        .stat-val{font-size:1.75rem;font-weight:700;display:block}
+        .stat-lbl{font-size:.75rem;color:#6b7280;text-transform:uppercase;letter-spacing:.05em}
+        .card{background:#fff;border-radius:10px;box-shadow:0 1px 6px rgba(0,0,0,.07);overflow:hidden;margin-bottom:1rem}
+        .filters{padding:1rem 1.25rem;border-bottom:1px solid #e5e7eb;display:flex;gap:.75rem;flex-wrap:wrap}
+        .filters input,.filters select{padding:.5rem .75rem;border:1px solid #d1d5db;border-radius:6px;font-size:.875rem;background:#fff}
+        .filters button{padding:.5rem 1rem;background:#6366f1;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:.875rem;font-weight:600}
+        table{width:100%;border-collapse:collapse;font-size:.875rem}
+        th{padding:.625rem 1rem;text-align:left;font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280;border-bottom:2px solid #e5e7eb}
+        td{padding:.625rem 1rem;border-bottom:1px solid #f3f4f6}
+        tr:hover td{background:#f9fafb}
+        .badge{display:inline-block;padding:.15rem .6rem;border-radius:20px;font-size:.7rem;font-weight:600;text-transform:uppercase}
+        .badge-active{background:#d1fae5;color:#065f46}
+        .badge-pending{background:#fef3c7;color:#92400e}
+        .badge-unsubscribed{background:#f3f4f6;color:#6b7280}
+        .badge-bounced{background:#fee2e2;color:#991b1b}
+        .btn-sm{padding:.25rem .75rem;border:1px solid #e5e7eb;border-radius:4px;background:#fff;cursor:pointer;font-size:.75rem;text-decoration:none;color:#374151}
+        .btn-sm:hover{border-color:#f7931a;color:#f7931a}
+        .btn-danger{border-color:#fca5a5;color:#dc2626}
+        .btn-danger:hover{background:#fee2e2}
+        .pagination{display:flex;gap:.5rem;justify-content:center;padding:1rem;flex-wrap:wrap}
+        .pagination a,.pagination span{padding:.375rem .75rem;border:1px solid #e5e7eb;border-radius:4px;font-size:.875rem;text-decoration:none;color:#374151}
+        .pagination .active{background:#6366f1;border-color:#6366f1;color:#fff}
+        .empty{padding:3rem;text-align:center;color:#9ca3af}
+        .export-btn{padding:.5rem 1rem;background:#fff;color:#374151;border:1px solid #d1d5db;border-radius:6px;text-decoration:none;font-size:.875rem;font-weight:500}
+        .export-btn:hover{border-color:#374151}
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <div class="page-header">
+        <div>
+            <a href="{{ path('admin') }}" class="back">← Admin</a>
+            <h1 style="margin-top:.25rem">Newsletter Subscribers</h1>
+        </div>
+        <a href="{{ path('admin_newsletter_export') }}" class="export-btn">Export CSV</a>
+    </div>
+
+    {# Flash messages #}
+    {% for type, messages in app.flashes %}
+        {% for msg in messages %}
+            <div style="padding:.75rem 1rem;border-radius:6px;margin-bottom:1rem;background:{{ type=='success' ? '#d1fae5' : '#fee2e2' }};color:{{ type=='success' ? '#065f46' : '#991b1b' }};border:1px solid {{ type=='success' ? '#a7f3d0' : '#fecaca' }}">
+                {{ msg }}
+            </div>
+        {% endfor %}
+    {% endfor %}
+
+    {# Stats #}
+    <div class="stats">
+        <div class="stat"><span class="stat-val">{{ stats.active }}</span><span class="stat-lbl">Active</span></div>
+        <div class="stat"><span class="stat-val">{{ stats.pending }}</span><span class="stat-lbl">Pending</span></div>
+        <div class="stat"><span class="stat-val">{{ stats.unsubscribed }}</span><span class="stat-lbl">Unsub'd</span></div>
+        <div class="stat"><span class="stat-val">{{ stats.bounced }}</span><span class="stat-lbl">Bounced</span></div>
+        <div class="stat"><span class="stat-val">{{ stats.total }}</span><span class="stat-lbl">Total</span></div>
+    </div>
+
+    <div class="card">
+        {# Filters #}
+        <form class="filters" method="get">
+            <input type="search" name="q" value="{{ search }}" placeholder="Search email…">
+            <select name="status">
+                <option value="">All statuses</option>
+                {% for val in ['active','pending','unsubscribed','bounced'] %}
+                    <option value="{{ val }}" {{ status == val ? 'selected' : '' }}>{{ val|capitalize }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit">Filter</button>
+            {% if status or search %}<a href="{{ path('admin_newsletter_subscribers') }}" class="btn-sm">Clear</a>{% endif %}
+        </form>
+
+        {% if subscribers is not empty %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Email</th>
+                    <th>Status</th>
+                    <th>Source</th>
+                    <th>Subscribed</th>
+                    <th>Confirmed</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for sub in subscribers %}
+                <tr>
+                    <td>{{ sub.email }}</td>
+                    <td><span class="badge badge-{{ sub.status.value }}">{{ sub.status.value }}</span></td>
+                    <td>{{ sub.source }}</td>
+                    <td>{{ sub.createdAt|date('M d, Y') }}</td>
+                    <td>{{ sub.confirmedAt ? sub.confirmedAt|date('M d, Y') : '—' }}</td>
+                    <td>
+                        {% if sub.status.value == 'active' %}
+                        <form method="post" action="{{ path('admin_newsletter_unsubscribe_manual', {id: sub.id}) }}"
+                              onsubmit="return confirm('Unsubscribe {{ sub.email }}?')">
+                            <button type="submit" class="btn-sm btn-danger">Unsub</button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+
+        {% if totalPages > 1 %}
+        <div class="pagination">
+            {% for p in 1..totalPages %}
+                {% if p == page %}
+                    <span class="active">{{ p }}</span>
+                {% else %}
+                    <a href="?page={{ p }}&status={{ status }}&q={{ search }}">{{ p }}</a>
+                {% endif %}
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="empty">No subscribers found.</div>
+        {% endif %}
+    </div>
+</div>
+</body>
+</html>

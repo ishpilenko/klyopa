@@ -40,3 +40,7 @@ services:
         arguments:
             $secretKey: '%env(default::TURNSTILE_SECRET_KEY)%'
             $enabled:   '%env(bool:CAPTCHA_ENABLED)%'
+
+    App\Service\Newsletter\DigestGenerator:
+        arguments:
+            $anthropicApiKey: '%env(default::ANTHROPIC_API_KEY)%'

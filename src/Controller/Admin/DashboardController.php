@@ -60,6 +60,10 @@ class DashboardController extends AbstractDashboardController
         yield MenuItem::linkTo(UserCrudController::class, 'Users', 'fa fa-users')
             ->setPermission('ROLE_SUPER_ADMIN');
 
+        yield MenuItem::section('Newsletter');
+        yield MenuItem::linkToRoute('Subscribers', 'fa fa-envelope', 'admin_newsletter_subscribers');
+        yield MenuItem::linkToRoute('Issues', 'fa fa-paper-plane', 'admin_newsletter_issues');
+
         yield MenuItem::section('');
         yield MenuItem::linkToUrl('View Site', 'fa fa-external-link', '/');
     }

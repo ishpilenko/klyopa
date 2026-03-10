@@ -15,7 +15,6 @@
 
     var SITEKEY           = cfg.sitekey || '';
     var TOOLS_THRESHOLD   = cfg.toolsThreshold  || 10;
-    var NL_THRESHOLD      = cfg.nlThreshold     || 1;   // newsletter
     var VERIFIED_TTL_MS   = 30 * 60 * 1000;             // 30 min verified window
 
     // ── SessionStorage helpers ────────────────────────────────────────────────
@@ -153,87 +152,6 @@
                 },
                 null
             );
-        });
-    });
-
-    // ── Newsletter form ───────────────────────────────────────────────────────
-
-    var nlForms = document.querySelectorAll(
-        '.newsletter-form, [data-captcha-guard="newsletter"]'
-    );
-
-    nlForms.forEach(function (form) {
-        form.addEventListener('submit', function (e) {
-            e.preventDefault();
-
-            var storeKey  = 'nl_submits';
-            var count     = getCount(storeKey);
-            var needsCaptcha = count >= NL_THRESHOLD && !isVerified(storeKey);
-
-            function doSubmit(token) {
-                incCount(storeKey);
-
-                var emailEl   = form.querySelector('[name="email"]');
-                var csrfEl    = form.querySelector('[name="_token"]');
-                var tokenEl   = form.querySelector('[name="cf-turnstile-response"]');
-
-                if (!tokenEl) {
-                    tokenEl = document.createElement('input');
-                    tokenEl.type = 'hidden';
-                    tokenEl.name = 'cf-turnstile-response';
-                    form.appendChild(tokenEl);
-                }
-                tokenEl.value = token || '';
-
-                var body = new URLSearchParams({
-                    email:                   emailEl  ? emailEl.value  : '',
-                    _token:                  csrfEl   ? csrfEl.value   : '',
-                    'cf-turnstile-response': token || ''
-                });
-
-                var btn    = form.querySelector('button[type="submit"]');
-                var status = form.querySelector('.nl-status');
-                if (btn) btn.disabled = true;
-
-                fetch('/newsletter/subscribe', {
-                    method:  'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body:    body.toString()
-                })
-                .then(function (r) { return r.json(); })
-                .then(function (data) {
-                    if (data.success) {
-                        if (status) {
-                            status.textContent = data.message || 'You\'re subscribed! 🎉';
-                            status.style.color = 'var(--color-positive)';
-                        }
-                        form.reset();
-                        markVerified(storeKey);
-                    } else {
-                        if (status) {
-                            status.textContent = data.error || 'Something went wrong.';
-                            status.style.color = 'var(--color-negative)';
-                        }
-                        // If server requested captcha despite our count being low
-                        if (data.captcha_required && btn) btn.disabled = false;
-                    }
-                })
-                .catch(function () {
-                    if (status) {
-                        status.textContent = 'Network error. Please try again.';
-                        status.style.color = 'var(--color-negative)';
-                    }
-                })
-                .finally(function () {
-                    if (btn) btn.disabled = false;
-                });
-            }
-
-            if (needsCaptcha) {
-                showCaptchaModal(doSubmit, null);
-            } else {
-                doSubmit('');
-            }
         });
     });
 

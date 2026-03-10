@@ -100,6 +100,22 @@ class ArticleRepository extends ServiceEntityRepository
             ->getResult();
     }
 
+    /** @return Article[] */
+    public function findPublishedSince(\DateTimeImmutable $since, int $limit = 10): array
+    {
+        return $this->createQueryBuilder('a')
+            ->where('a.site = :site')
+            ->andWhere('a.status = :status')
+            ->andWhere('a.publishedAt >= :since')
+            ->setParameter('site', $this->siteContext->getSite())
+            ->setParameter('status', \App\Enum\ArticleStatus::Published)
+            ->setParameter('since', $since)
+            ->orderBy('a.publishedAt', 'DESC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
+
     public function findBySlug(string $slug): ?Article
     {
         return $this->createQueryBuilder('a')
