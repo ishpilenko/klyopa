@@ -40,13 +40,15 @@
 </div>
 {% endif %}
 
-{# Newsletter signup (replaces the ad placeholder) #}
+{# Newsletter signup #}
 <div class="sidebar-newsletter">
     <h3>Daily Crypto Brief</h3>
     <p>Market highlights &amp; analysis, every morning.</p>
-    <form onsubmit="return false">
-        <input type="email" placeholder="Your email address">
+    <form class="newsletter-form" data-captcha-guard="newsletter" novalidate>
+        <input type="hidden" name="_token" value="{{ csrf_token('newsletter') }}">
+        <input type="email" name="email" placeholder="Your email address" required autocomplete="email">
         <button type="submit">Subscribe Free</button>
+        <p class="nl-status" style="font-size:.75rem;margin:.5rem 0 0;min-height:1em"></p>
     </form>
     <p class="note">No spam. Unsubscribe anytime.</p>
 </div>

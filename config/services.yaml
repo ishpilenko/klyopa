@@ -35,3 +35,8 @@ services:
     App\Command\GenerateCoinDescriptionsCommand:
         arguments:
             $anthropicApiKey: '%env(default::ANTHROPIC_API_KEY)%'
+
+    App\Service\TurnstileVerifier:
+        arguments:
+            $secretKey: '%env(default::TURNSTILE_SECRET_KEY)%'
+            $enabled:   '%env(bool:CAPTCHA_ENABLED)%'

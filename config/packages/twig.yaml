@@ -3,6 +3,9 @@ twig:
     strict_variables: '%kernel.debug%'
     globals:
         app_name: 'MultiSite Platform'
+        captcha_enabled: '%env(bool:CAPTCHA_ENABLED)%'
+        turnstile_sitekey: '%env(TURNSTILE_SITE_KEY)%'
+        captcha_tools_threshold: '%env(int:CAPTCHA_TOOLS_THRESHOLD)%'
 
 when@test:
     twig:

@@ -181,6 +181,16 @@
         <script src="/assets/js/toc.js" defer></script>
         <script src="/assets/js/read-next.js" defer></script>
         <script src="/assets/js/search.js" defer></script>
+        {# Captcha config — injected before tool-guard.js so it can read it #}
+        <script>
+        window.CAPTCHA_CONFIG = {
+            enabled:        {{ captcha_enabled ? 'true' : 'false' }},
+            sitekey:        {{ turnstile_sitekey|default('')|json_encode|raw }},
+            toolsThreshold: {{ captcha_tools_threshold|default(10) }},
+            nlThreshold:    1
+        };
+        </script>
+        <script src="/assets/js/tool-guard.js" defer></script>
     {% endblock %}
 </body>
 </html>
