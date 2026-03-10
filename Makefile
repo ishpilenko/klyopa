@@ -1,4 +1,8 @@
-.PHONY: help up down build install init migrate fixtures reset logs shell test
+.PHONY: help up down build install init migrate fixtures reset logs shell test fix-perms
+
+# Detect host user/group for permission fixes
+HOST_UID := $(shell id -u)
+HOST_GID := $(shell id -g)
 
 # Default target
 help: ## Show this help
@@ -55,3 +59,8 @@ composer-require: ## Add a package: make composer-require pkg=vendor/package
 	docker-compose run --rm --user root php composer require $(pkg)
 
 cc: cache-clear ## Alias for cache-clear
+
+fix-perms: ## Fix file permissions so PhpStorm/host user can edit files
+	@echo "Setting ownership to $(HOST_UID):$(HOST_GID) on all project files..."
+	docker-compose run --rm --user root php chown -R $(HOST_UID):$(HOST_GID) /var/www
+	@echo "✅ Done. Files are now editable by your host user."
